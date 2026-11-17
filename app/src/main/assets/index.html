@@ -1305,6 +1305,20 @@ function syncCoinAlerts(){
     N.schedule(JSON.stringify(list));
   }catch(e){}
 }
+// pinned flight card on the phone's lock screen (Android app only): sent on booking, refreshed while the app is open
+let tripSig='',tripSent=0;
+function syncTripCard(now){
+  const N=window.BoardingPassTrip;if(!N)return;
+  const b=me&&me.booking;
+  try{
+    if(!b||b.tut){if(tripSig){N.clear();tripSig=''}return}
+    const sig=b.key;if(sig===tripSig&&now-tripSent<30000)return;
+    const s=now>=b.dep&&now<b.arr?flightState(myTpl(b),b.dep,now):null,A=AP[b.o],B=AP[b.d];
+    N.show(JSON.stringify({key:b.key,id:b.id,airline:(AIRLINES[b.al]||{}).name||'',from:b.o,to:b.d,fromCity:A.city,toCity:B.city,dep:b.dep,arr:b.arr,
+      gate:b.gate,seat:b.seat,type:b.type,fromTz:ZONES[b.o]||'',toTz:ZONES[b.d]||'',phase:s?s.phase:'',alt:s?s.alt:0,at:now}));
+    tripSig=sig;tripSent=now;
+  }catch(e){}
+}
 // in-flight pickups: a coin is yours if the app was open as your plane passed it
 let coinSeen=0,coinP=null,coinFx=[];
 function coinTick(now){
@@ -2878,7 +2892,7 @@ setInterval(()=>{
   const now=Date.now();
   updatePills(now);tick();
   if(!cloudReady)return;
-  checkLanding();coinTick(now);syncCoinAlerts();if(now%10000<1000)claimDaily();
+  checkLanding();coinTick(now);syncCoinAlerts();syncTripCard(now);if(now%10000<1000)claimDaily();
   const st=myState(now);
   if(st!==lastState){lastState=st;indexPlayers();renderSheet();needsDraw=true;lastSheet=now}
   else if(st!=='onboard'&&now-lastSheet>(st==='flying'?3000:20000)){indexPlayers();renderSheet();lastSheet=now}

@@ -26,5 +26,6 @@
             </intent-filter>
         </activity>
         <receiver android:name=".CoinAlarmReceiver" android:exported="false" />
+        <receiver android:name=".TripNotifier$Refresh" android:exported="false" />
     </application>
 </manifest>

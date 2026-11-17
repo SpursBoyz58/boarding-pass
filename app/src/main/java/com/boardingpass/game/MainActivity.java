@@ -64,6 +64,8 @@ public class MainActivity extends Activity {
         // coin alerts: a local notification channel, a bridge the page calls, and (Android 13+) permission to notify
         Alerts.createChannel(this);
         web.addJavascriptInterface(new Alerts(this), "BoardingPassAlerts");
+        TripNotifier.createChannel(this);
+        web.addJavascriptInterface(new TripNotifier(this), "BoardingPassTrip");
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
 
