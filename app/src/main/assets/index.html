@@ -833,6 +833,112 @@ USH|Ushuaia|Argentina|-54.84|-68.3|-3|3|SAM
 SCL|Santiago|Chile|-33.39|-70.79|-4|1|SAM
 IPC|Easter Island|Chile|-27.16|-109.42|-6|3|SAM`;
 
+/* Every other country's main airport (code|city|country|lat|lon|utc|tier|region|IANA zone|iso). Joined to the network last. */
+const NEW_AIRPORT_DATA = `
+KBL|Kabul|Afghanistan|34.57|69.21|4.5|3|SAS|Asia/Kabul|AF
+EVN|Yerevan|Armenia|40.15|44.40|4|3|ME|Asia/Yerevan|AM
+GYD|Baku|Azerbaijan|40.47|50.05|4|2|ME|Asia/Baku|AZ
+TBS|Tbilisi|Georgia|41.67|44.95|4|3|EU|Asia/Tbilisi|GE
+IKA|Tehran|Iran|35.42|51.15|3.5|2|ME|Asia/Tehran|IR
+BGW|Baghdad|Iraq|33.26|44.23|3|2|ME|Asia/Baghdad|IQ
+DAM|Damascus|Syria|33.41|36.52|3|3|ME|Asia/Damascus|SY
+SAH|Sanaa|Yemen|15.48|44.22|3|3|ME|Asia/Aden|YE
+ALA|Almaty|Kazakhstan|43.35|77.04|5|2|SAS|Asia/Almaty|KZ
+FRU|Bishkek|Kyrgyzstan|43.06|74.48|6|3|SAS|Asia/Bishkek|KG
+DYU|Dushanbe|Tajikistan|38.54|68.83|5|3|SAS|Asia/Dushanbe|TJ
+ASB|Ashgabat|Turkmenistan|37.99|58.36|5|3|ME|Asia/Ashgabat|TM
+TAS|Tashkent|Uzbekistan|41.26|69.28|5|2|SAS|Asia/Tashkent|UZ
+VTE|Vientiane|Laos|17.99|102.56|7|3|SEAS|Asia/Vientiane|LA
+FNJ|Pyongyang|North Korea|39.22|125.67|9|3|EAS|Asia/Pyongyang|KP
+DIL|Dili|East Timor|-8.55|125.52|9|3|SEAS|Asia/Dili|TL
+BWN|Bandar Seri Begawan|Brunei|4.94|114.93|8|3|SEAS|Asia/Brunei|
+SVO|Moscow|Russia|55.97|37.41|3|1|EU|Europe/Moscow|RU
+TIA|Tirana|Albania|41.41|19.72|1|3|EU|Europe/Tirane|AL
+SOF|Sofia|Bulgaria|42.70|23.41|2|2|EU|Europe/Sofia|BG
+SJJ|Sarajevo|Bosnia and Herzegovina|43.82|18.33|1|3|EU|Europe/Sarajevo|BA
+MSQ|Minsk|Belarus|53.88|28.03|3|3|EU|Europe/Minsk|BY
+TLL|Tallinn|Estonia|59.41|24.83|2|3|EU|Europe/Tallinn|EE
+VNO|Vilnius|Lithuania|54.63|25.29|2|3|EU|Europe/Vilnius|LT
+RIX|Riga|Latvia|56.92|23.97|2|2|EU|Europe/Riga|LV
+KIV|Chișinău|Moldova|46.93|28.93|2|3|EU|Europe/Chisinau|MD
+SKP|Skopje|North Macedonia|41.96|21.62|1|3|EU|Europe/Skopje|MK
+MLA|Valletta|Malta|35.86|14.48|1|3|EU|Europe/Malta|MT
+TGD|Podgorica|Montenegro|42.36|19.25|1|3|EU|Europe/Podgorica|ME
+OTP|Bucharest|Romania|44.57|26.08|2|2|EU|Europe/Bucharest|RO
+BEG|Belgrade|Serbia|44.82|20.31|1|2|EU|Europe/Belgrade|RS
+BTS|Bratislava|Slovakia|48.17|17.21|1|3|EU|Europe/Bratislava|SK
+LJU|Ljubljana|Slovenia|46.22|14.46|1|3|EU|Europe/Ljubljana|SI
+KBP|Kyiv|Ukraine|50.34|30.89|2|2|EU|Europe/Kyiv|UA
+LCA|Larnaca|Cyprus|34.88|33.63|2|2|EU|Asia/Nicosia|
+LUX|Luxembourg|Luxembourg|49.63|6.21|1|3|EU|Europe/Luxembourg|
+PRN|Pristina|Kosovo|42.57|21.04|1|3|EU|Europe/Belgrade|
+LAD|Luanda|Angola|-8.86|13.23|1|2|AF|Africa/Luanda|AO
+BJM|Bujumbura|Burundi|-3.32|29.32|2|3|AF|Africa/Bujumbura|BI
+COO|Cotonou|Benin|6.36|2.38|1|3|AF|Africa/Porto-Novo|BJ
+OUA|Ouagadougou|Burkina Faso|12.35|-1.51|0|3|AF|Africa/Ouagadougou|BF
+GBE|Gaborone|Botswana|-24.56|25.92|2|3|AF|Africa/Gaborone|BW
+BGF|Bangui|Central African Republic|4.40|18.52|1|3|AF|Africa/Bangui|CF
+ABJ|Abidjan|Ivory Coast|5.26|-3.93|0|2|AF|Africa/Abidjan|CI
+DLA|Douala|Cameroon|4.01|9.72|1|3|AF|Africa/Douala|CM
+FIH|Kinshasa|DR Congo|-4.39|15.44|1|2|AF|Africa/Kinshasa|CD
+BZV|Brazzaville|Congo|-4.25|15.25|1|3|AF|Africa/Brazzaville|CG
+HAH|Moroni|Comoros|-11.53|43.27|3|3|AF|Indian/Comoro|KM
+RAI|Praia|Cape Verde|14.92|-23.49|-1|3|AF|Atlantic/Cape_Verde|CV
+JIB|Djibouti|Djibouti|11.55|43.16|3|3|AF|Africa/Djibouti|DJ
+ALG|Algiers|Algeria|36.69|3.22|1|2|AF|Africa/Algiers|DZ
+ASM|Asmara|Eritrea|15.29|38.91|3|3|AF|Africa/Asmara|ER
+LBV|Libreville|Gabon|0.46|9.41|1|3|AF|Africa/Libreville|GA
+CKY|Conakry|Guinea|9.58|-13.61|0|3|AF|Africa/Conakry|GN
+OXB|Bissau|Guinea-Bissau|11.89|-15.65|0|3|AF|Africa/Bissau|GW
+SSG|Malabo|Equatorial Guinea|3.76|8.71|1|3|AF|Africa/Malabo|GQ
+ROB|Monrovia|Liberia|6.23|-10.36|0|3|AF|Africa/Monrovia|LR
+MJI|Tripoli|Libya|32.89|13.28|2|3|AF|Africa/Tripoli|LY
+MSU|Maseru|Lesotho|-29.46|27.55|2|3|AF|Africa/Maseru|LS
+BKO|Bamako|Mali|12.53|-7.95|0|3|AF|Africa/Bamako|ML
+MPM|Maputo|Mozambique|-25.92|32.57|2|3|AF|Africa/Maputo|MZ
+NKC|Nouakchott|Mauritania|18.31|-15.97|0|3|AF|Africa/Nouakchott|MR
+LLW|Lilongwe|Malawi|-13.79|33.78|2|3|AF|Africa/Blantyre|MW
+NIM|Niamey|Niger|13.48|2.18|1|3|AF|Africa/Niamey|NE
+KRT|Khartoum|Sudan|15.59|32.55|2|3|AF|Africa/Khartoum|SD
+FNA|Freetown|Sierra Leone|8.62|-13.20|0|3|AF|Africa/Freetown|SL
+HGA|Hargeisa|Somaliland|9.52|44.09|3|3|AF|Africa/Mogadishu|
+MGQ|Mogadishu|Somalia|2.01|45.30|3|3|AF|Africa/Mogadishu|SO
+JUB|Juba|South Sudan|4.87|31.60|2|3|AF|Africa/Juba|SS
+TMS|São Tomé|São Tomé and Príncipe|0.38|6.71|0|3|AF|Africa/Sao_Tome|ST
+SHO|Manzini|eSwatini|-26.36|31.72|2|3|AF|Africa/Mbabane|SZ
+NDJ|N'Djamena|Chad|12.13|15.03|1|3|AF|Africa/Ndjamena|TD
+LFW|Lomé|Togo|6.17|1.25|0|3|AF|Africa/Lome|TG
+EBB|Entebbe|Uganda|0.04|32.44|3|2|AF|Africa/Kampala|UG
+LUN|Lusaka|Zambia|-15.33|28.45|2|3|AF|Africa/Lusaka|ZM
+BJL|Banjul|Gambia|13.34|-16.65|0|3|AF|Africa/Banjul|
+ANU|Antigua|Antigua and Barbuda|17.14|-61.79|-4|3|NAM|America/Antigua|AG
+BZE|Belize City|Belize|17.54|-88.31|-6|3|NAM|America/Belize|BZ
+BGI|Bridgetown|Barbados|13.07|-59.49|-4|3|NAM|America/Barbados|BB
+DOM|Dominica|Dominica|15.55|-61.30|-4|3|NAM|America/Dominica|DM
+SDQ|Santo Domingo|Dominican Republic|18.43|-69.67|-4|2|NAM|America/Santo_Domingo|DO
+GND|St George's|Grenada|12.00|-61.79|-4|3|NAM|America/Grenada|GD
+GUA|Guatemala City|Guatemala|14.58|-90.53|-6|2|NAM|America/Guatemala|GT
+GEO|Georgetown|Guyana|6.50|-58.25|-4|3|SAM|America/Guyana|GY
+XPL|Tegucigalpa|Honduras|14.38|-87.62|-6|3|NAM|America/Tegucigalpa|HN
+PAP|Port-au-Prince|Haiti|18.58|-72.29|-5|3|NAM|America/Port-au-Prince|HT
+SKB|Basseterre|St Kitts and Nevis|17.31|-62.72|-4|3|NAM|America/St_Kitts|KN
+UVF|Saint Lucia|Saint Lucia|13.73|-60.95|-4|3|NAM|America/St_Lucia|LC
+MGA|Managua|Nicaragua|12.14|-86.17|-6|3|NAM|America/Managua|NI
+SAL|San Salvador|El Salvador|13.44|-89.06|-6|3|NAM|America/El_Salvador|SV
+PBM|Paramaribo|Suriname|5.45|-55.19|-3|3|SAM|America/Paramaribo|SR
+POS|Port of Spain|Trinidad and Tobago|10.60|-61.34|-4|3|SAM|America/Port_of_Spain|TT
+SVD|Kingstown|St Vincent and the Grenadines|13.16|-61.15|-4|3|NAM|America/St_Vincent|VC
+PNI|Pohnpei|Micronesia|6.99|158.21|11|3|OC|Pacific/Pohnpei|FM
+TRW|Tarawa|Kiribati|1.38|173.15|12|3|OC|Pacific/Tarawa|KI
+MAJ|Majuro|Marshall Islands|7.06|171.27|12|3|OC|Pacific/Majuro|MH
+ROR|Koror|Palau|7.37|134.54|9|3|OC|Pacific/Palau|PW
+HIR|Honiara|Solomon Islands|-9.43|160.05|11|3|OC|Pacific/Guadalcanal|SB
+TBU|Nuku'alofa|Tonga|-21.24|-175.15|13|3|OC|Pacific/Tongatapu|TO
+FUN|Funafuti|Tuvalu|-8.53|179.20|12|3|OC|Pacific/Funafuti|TV
+VLI|Port Vila|Vanuatu|-17.70|168.32|11|3|OC|Pacific/Efate|VU
+APW|Apia|Samoa|-13.83|-172.01|13|3|OC|Pacific/Apia|WS
+INU|Nauru|Nauru|-0.55|166.92|12|3|OC|Pacific/Nauru|`;
+
 /* Real time zones (IANA) so local clocks follow daylight saving live */
 const ZONES = Object.fromEntries(`SYD:Australia/Sydney CBR:Australia/Sydney MEL:Australia/Melbourne HBA:Australia/Hobart BNE:Australia/Brisbane OOL:Australia/Brisbane CNS:Australia/Brisbane TSV:Australia/Brisbane PER:Australia/Perth BME:Australia/Perth KTA:Australia/Perth KGI:Australia/Perth ADL:Australia/Adelaide DRW:Australia/Darwin ASP:Australia/Darwin
 AKL:Pacific/Auckland WLG:Pacific/Auckland CHC:Pacific/Auckland ZQN:Pacific/Auckland NAN:Pacific/Fiji NOU:Pacific/Noumea PPT:Pacific/Tahiti RAR:Pacific/Rarotonga POM:Pacific/Port_Moresby
@@ -844,6 +950,7 @@ LHR:Europe/London MAN:Europe/London EDI:Europe/London DUB:Europe/Dublin CDG:Euro
 CAI:Africa/Cairo CMN:Africa/Casablanca RAK:Africa/Casablanca TUN:Africa/Tunis ADD:Africa/Addis_Ababa NBO:Africa/Nairobi KGL:Africa/Kigali DAR:Africa/Dar_es_Salaam ZNZ:Africa/Dar_es_Salaam LOS:Africa/Lagos ACC:Africa/Accra DSS:Africa/Dakar JNB:Africa/Johannesburg CPT:Africa/Johannesburg DUR:Africa/Johannesburg WDH:Africa/Windhoek VFA:Africa/Harare TNR:Indian/Antananarivo MRU:Indian/Mauritius SEZ:Indian/Mahe
 JFK:America/New_York BOS:America/New_York IAD:America/New_York ATL:America/New_York MIA:America/New_York MCO:America/New_York ORD:America/Chicago MSP:America/Chicago DFW:America/Chicago IAH:America/Chicago DEN:America/Denver PHX:America/Phoenix LAS:America/Los_Angeles LAX:America/Los_Angeles SFO:America/Los_Angeles SEA:America/Los_Angeles ANC:America/Anchorage HNL:Pacific/Honolulu YYZ:America/Toronto YUL:America/Toronto YHZ:America/Halifax YYC:America/Edmonton YVR:America/Vancouver MEX:America/Mexico_City GDL:America/Mexico_City CUN:America/Cancun SJD:America/Mazatlan HAV:America/Havana NAS:America/Nassau MBJ:America/Jamaica SJU:America/Puerto_Rico SJO:America/Costa_Rica PTY:America/Panama
 BOG:America/Bogota MDE:America/Bogota CTG:America/Bogota CCS:America/Caracas UIO:America/Guayaquil GPS:Pacific/Galapagos LIM:America/Lima CUZ:America/Lima LPB:America/La_Paz GRU:America/Sao_Paulo GIG:America/Sao_Paulo BSB:America/Sao_Paulo SSA:America/Bahia FOR:America/Fortaleza IGU:America/Sao_Paulo ASU:America/Asuncion MVD:America/Montevideo EZE:America/Argentina/Buenos_Aires USH:America/Argentina/Ushuaia SCL:America/Santiago IPC:Pacific/Easter`.split(/\s+/).map(x=>x.split(':')));
+for(const l of NEW_AIRPORT_DATA.trim().split('\n')){const f=l.split('|');ZONES[f[0]]=f[8]}
 const START = 'SYD'; // every player begins here
 const REGIONS = {OC:'Oceania',SEAS:'Southeast Asia',EAS:'East Asia',SAS:'South Asia',ME:'Middle East',EU:'Europe',AF:'Africa',NAM:'North America',SAM:'South America'};
 const SPOKE_LIMIT = {OC:4500,SEAS:3000,EAS:3200,SAS:3000,ME:2500,EU:3000,AF:5000,NAM:4500,SAM:4500};
@@ -1001,6 +1108,39 @@ for(const A of AIRLINE_LIST){
 // 5) busy holiday routes the generator undersells. Added last, so no existing flight number shifts.
 for(const [al,a,b] of [['UZ','PER','DPS'],['UZ','SYD','DPS'],['UZ','MEL','DPS'],['UZ','BNE','DPS'],['UZ','DRW','DPS'],
   ['EQ','KUL','DPS'],['EQ','CGK','DPS'],['HD','HKG','DPS'],['HR','ICN','DPS'],['PD','DOH','DPS']])if(AP[a]&&AP[b])addRoute(al,a,b);
+// 6) every country gets an airport. These join last, so no existing flight number shifts.
+const NEWAP=[];
+{
+  const NO_PAIR=new Set(['FNJ|ICN','FNJ|PUS','FNJ|CJU']),ok=(a,b)=>!NO_PAIR.has(a+'|'+b)&&!NO_PAIR.has(b+'|'+a),add=(al,a,b)=>{if(ok(a,b))addRoute(al,a,b)};
+  for(const line of NEW_AIRPORT_DATA.trim().split('\n')){
+    const [code,city,country,lat,lon,tz,tier,region,,iso]=line.split('|');
+    const a={code,city,country,lat:+lat,lon:+lon,tz:+tz,tier:+tier,region,nw:true};a.v=vec(a.lat,a.lon);a.my=mercY(a.lat);
+    a.zone={OC:'OC',SEAS:'AS',EAS:'AS',SAS:'AS',ME:'ME',EU:'EU',AF:'AF',NAM:'NA',SAM:'SA'}[region];
+    AP[code]=a;APL.push(a);NEWAP.push(a);
+    const C=COUNTRIES.find(c=>iso?c[1]===iso&&(iso!=='NZ'):c[0]===country);if(C){if(!C[5].includes(code))C[5].push(code);C[4]=a.zone}
+  }
+  // regional spokes, and always the nearest hub in the region
+  for(const X of NEWAP){
+    let best=null,bh=null,bd=1e9;
+    for(const A of AIRLINE_LIST){if(A.region!==X.region)continue;const lim=SPOKE_LIMIT[A.region];
+      A.hubs.forEach((h,hi)=>{const d=gdist(AP[h],X),hl=hi===0?lim:lim*.6;if(d<bd&&ok(h,X.code)){bd=d;best=A;bh=h}
+        if(X.tier<=2&&d<=hl)add(A.code,h,X.code);else if(X.tier===3&&nearestHub(A,X)===h&&d<=lim*.5)add(A.code,h,X.code)})}
+    if(best)add(best.code,bh,X.code);
+  }
+  // the bigger ones also get a few long-haul links from main hubs abroad
+  for(const A of AIRLINE_LIST){const h=A.hubs[0],H=AP[h],c=[];
+    for(const X of NEWAP){if(X.region===A.region||X.tier>2)continue;const d=gdist(H,X);if(d>(X.tier===1?12000:7000))continue;c.push([(X.tier===1?3:1.3)*(d<3500?1.6:d<5000?1.2:.8)*(.75+.5*hr(h+X.code)),X.code])}
+    c.sort((p,q)=>q[0]-p[0]);for(const [,x] of c.slice(0,Math.max(1,Math.round(A.k/6))))add(A.code,h,x)}
+  // and no dead ends: at least two links inside their own region
+  const nb=new Map(),serv=new Map();
+  const link=(a,b,al)=>{for(const [x,y] of [[a,b],[b,a]]){if(!nb.has(x))nb.set(x,new Set());nb.get(x).add(y);if(!serv.has(x))serv.set(x,al)}};
+  for(const r of routes.values())link(r.a,r.b,r.al);
+  for(let pass=0;pass<2;pass++)for(const X of NEWAP){
+    const same=[...(nb.get(X.code)||[])].filter(c=>AP[c].zone===X.zone);if(same.length>=2)continue;
+    const cand=APL.filter(Y=>Y.code!==X.code&&Y.zone===X.zone&&!same.includes(Y.code)&&ok(X.code,Y.code)).map(Y=>[gdist(X,Y)*(Y.tier===3?1.6:1),Y]).sort((p,q)=>p[0]-q[0]);
+    for(const [,Y] of cand.slice(0,2-same.length)){const al=serv.get(X.code)||serv.get(Y.code)||AIRLINE_LIST[0].code;add(al,X.code,Y.code);link(X.code,Y.code,al)}
+  }
+}
 function pickType(d,ts,h){const b=pickType0(d,ts,h);
   // big hub-to-hub trunk routes get the four-engined giants now and then
   if(ts===2&&d>=6500&&TYPES[b].v===900&&!/ULR|LR/.test(b)){const q=(h>>>7)%5;if(q===0)return 'A380-800';if(q===1&&d>=8000)return '747-8'}
@@ -1419,8 +1559,18 @@ for(const c of ['Indonesia','Malaysia','Thailand','Vietnam','Philippines','Cambo
 for(const c of ['Cuba','Bahamas','Jamaica','Puerto Rico','Costa Rica','Panama'])MKT[c]=1.35;
 for(const c of ['UAE','Qatar','Bahrain','Kuwait','Oman'])MKT[c]=1.65;
 for(const c of ['Kenya','Ethiopia','Tanzania','Rwanda','Namibia','Zimbabwe','Madagascar'])MKT[c]=1.1;
-const EUROPE1=new Set(['United Kingdom','Ireland','Spain','Italy','Portugal','Germany','France','Greece','Poland','Hungary','Czechia','Croatia','Netherlands','Belgium','Austria','Denmark','Sweden','Finland','Norway','Switzerland','Iceland']);
-const AFRICA=new Set(['Nigeria','South Africa','Morocco','Tunisia','Kenya','Ethiopia','Tanzania','Rwanda','Ghana','Senegal','Namibia','Zimbabwe','Madagascar','Mauritius','Seychelles','Egypt']);
+Object.assign(MKT,{Russia:.5,Ukraine:.55,Belarus:.6,Moldova:.6,Romania:.5,Bulgaria:.5,Serbia:.6,Albania:.6,'Bosnia and Herzegovina':.65,Montenegro:.65,'North Macedonia':.6,Kosovo:.6,
+  Slovakia:.55,Slovenia:.6,Estonia:.55,Latvia:.5,Lithuania:.5,Malta:.55,Cyprus:.6,Luxembourg:.7,Georgia:.6,Armenia:.8,Azerbaijan:.8,Kazakhstan:.7,Uzbekistan:.8,Kyrgyzstan:.9,
+  Tajikistan:1,Turkmenistan:1,Afghanistan:1.3,Iran:.35,Iraq:1,Syria:1.1,Yemen:1.6,Laos:.6,'North Korea':1.5,Brunei:.8,'East Timor':1.4,Algeria:.7,Libya:1,Sudan:1.3,
+  'South Sudan':1.6,Somalia:1.5,Somaliland:1.5,Eritrea:1.6,Djibouti:1.4,Uganda:1.1,Zambia:1.2,Malawi:1.3,Mozambique:1.2,Angola:1.3,Botswana:1.2,Lesotho:1.3,eSwatini:1.2,
+  Comoros:1.6,'Cape Verde':1.1,'São Tomé and Príncipe':1.6,Gambia:1.2,Burundi:1.4,'DR Congo':1.5,Congo:1.4,Gabon:1.4,Cameroon:1.3,'Equatorial Guinea':1.6,
+  'Central African Republic':1.7,Chad:1.6,Niger:1.5,Mali:1.4,'Burkina Faso':1.4,Benin:1.3,Togo:1.3,'Ivory Coast':1.2,Liberia:1.5,'Sierra Leone':1.5,Guinea:1.4,
+  'Guinea-Bissau':1.6,Mauritania:1.4,'Dominican Republic':1,Haiti:1.3,Guatemala:1.1,Honduras:1.1,'El Salvador':1.1,Nicaragua:1.1,Belize:1.4,'Trinidad and Tobago':1.1,
+  Guyana:1.3,Suriname:1.3});
+for(const c of ['Barbados','Saint Lucia','Grenada','Antigua and Barbuda','St Kitts and Nevis','Dominica','St Vincent and the Grenadines'])MKT[c]=1.5;
+for(const c of ['Vanuatu','Solomon Islands','Samoa','Tonga','Kiribati','Tuvalu','Marshall Islands','Micronesia','Palau','Nauru'])MKT[c]=1.5;
+const EUROPE1=new Set(['Romania','Bulgaria','Slovakia','Slovenia','Estonia','Latvia','Lithuania','Malta','Cyprus','Luxembourg','United Kingdom','Ireland','Spain','Italy','Portugal','Germany','France','Greece','Poland','Hungary','Czechia','Croatia','Netherlands','Belgium','Austria','Denmark','Sweden','Finland','Norway','Switzerland','Iceland']);
+const AFRICA=new Set(['Algeria','Libya','Sudan','South Sudan','Somalia','Somaliland','Eritrea','Djibouti','Uganda','Zambia','Malawi','Mozambique','Angola','Botswana','Lesotho','eSwatini','Comoros','Cape Verde','São Tomé and Príncipe','Gambia','Burundi','DR Congo','Congo','Gabon','Cameroon','Equatorial Guinea','Central African Republic','Chad','Niger','Mali','Burkina Faso','Benin','Togo','Ivory Coast','Liberia','Sierra Leone','Guinea','Guinea-Bissau','Mauritania','Nigeria','South Africa','Morocco','Tunisia','Kenya','Ethiopia','Tanzania','Rwanda','Ghana','Senegal','Namibia','Zimbabwe','Madagascar','Mauritius','Seychelles','Egypt']);
 const TAX_DOM={USA:25,Australia:32,Canada:35,'New Zealand':25};
 const taxOut=(c,km)=>c==='United Kingdom'?(km>3200?100:17):c==='Australia'?48:(c==='Nigeria'||c==='Ghana'||c==='Senegal')?70:0;
 const refFare=km=>29.4+0.25*Math.pow(Math.max(1,km),0.868);      // US$, a plain route in a US-priced market, before tax
