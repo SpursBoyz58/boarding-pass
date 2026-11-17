@@ -367,6 +367,9 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .coinrow i{width:18px;height:18px;border-radius:50%;background:#ffd23f;border:2px solid #26304a;box-shadow:inset 0 0 0 2px #fff0a8}
 .coinrow i.got{background:#25a849;box-shadow:none}
 .coinrow i.miss{background:#d6dee8;border-color:#a9b6c6;box-shadow:none}
+.coinrow i.sp{width:22px;height:22px;margin:-2px 0;background:#2f8ff0;box-shadow:inset 0 0 0 2px #bfe0ff}.coinrow i.sp.got{background:#25a849;box-shadow:none}.coinrow i.sp.miss{background:#d6dee8;box-shadow:none}
+.coinrow i.part{background:linear-gradient(90deg,#25a849 50%,#d6dee8 50%);box-shadow:none}
+.spodds{display:flex;align-items:center;justify-content:center;gap:8px;margin:10px 0 0;font-size:13px;font-weight:600;color:var(--ink,#26304a)}.spodds i{width:14px;height:14px;border-radius:50%;background:#2f8ff0;border:2px solid #26304a;box-shadow:inset 0 0 0 2px #bfe0ff}
 .nm .lvchip,.pcard .nm span.lvchip{display:inline-flex;width:auto;height:18px;padding:0 7px;font-size:11px;color:#fff;margin-left:4px}
 .alogo{border-radius:30%!important;border:2px solid #26304a;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);overflow:hidden;flex:none}
 .alogo svg{display:block}.alogo img{display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
@@ -1452,12 +1455,36 @@ function fareOf(t,cab='Y'){
   let a=fareUSD(t.o,t.d,t.km)*FX;if(cab!=='Y')a*=bizMult(t.km)*(cab==='F'?2.3:1);
   v=a>=1000?10*Math.round(a/10):5*Math.round(a/5);FARE_CACHE.set(k,v);return v;
 }
+/* ---------- coins in the sky ----------
+   A flight has a handful of drops spread along the route (about one an hour, 2 on a short hop, up to 20 on the longest).
+   A drop is a little cluster of 3-5 coins; now and then one is a rare coin worth 5x.
+   Some drops are special (blue): worth a lot more, you get a heads-up before them, and you have 25 minutes to open the app and grab them.
+   The chance of a special drop goes up with your status with the airline (or its alliance) and the cabin you fly. */
+const SP_CAB={Y:.1,J:.18,F:.28},SP_TIER=[0,.04,.09,.15],SP_WIN=25*MIN,SP_EARLY=5*MIN,ALERT_GAP=3*HOUR,ALERTS_PER_DAY=2;
+const spTier=al=>me&&al?Math.max(myTier(al),partnerTier(al)-1):-1;
+function specialChance(al,cab){const t=spTier(al);return Math.min(.45,SP_CAB[cab||'Y']+(t>0?SP_TIER[t]:0))}
+const dropCount=(mins,key)=>clamp(Math.round(1.5+1.1*Math.max(.5,mins/60)+((fnv(String(key).split('-')[0]+'n')%1000)/1000-.5)),2,20);
+function specialOdds(t,cab,key,dep,arr){const n=dropCount((arr-dep)/MIN,key),c=specialChance(t.al,cab);return 1-Math.pow(1-c,n)}
+const COIN_CACHE=new Map();
 function coinsFor(b){
-  const bonus=b.al&&me?TIER_DROP[Math.max(0,myTier(b.al))]:0;
-  const blk=Math.max(30,(b.arr-b.dep)/MIN),n=clamp(Math.round(blk/25),3,24),pool=refFare(b.km)*FX*2,out=[];
-  for(let i=0;i<n;i++){const h=fnv(b.key+'c'+i),p=.08+.84*(i+.15+.7*((h%1000)/1000))/n,v=Math.max(2,Math.round(pool/n*(.7+.6*((h>>>10)%1000)/1000)));out.push({i,p,v:Math.round(v*(1+bonus))})}
-  return out;
+  const tier=b.al&&me?Math.max(0,myTier(b.al)):0,ch=b.tut?0:specialChance(b.al,b.cabin);
+  const ck=b.key+'|'+(b.cabin||'Y')+'|'+tier+'|'+ch+'|'+b.dep+'|'+b.arr;let out=COIN_CACHE.get(ck);if(out)return out;
+  const seed=b.key+'|'+(myId||''),R=k=>(fnv(seed+k)%100000)/100000;
+  const n=dropCount((b.arr-b.dep)/MIN,b.key),gap=.88/n,pool=refFare(b.km)*FX*2*(1+TIER_DROP[tier]),r=pool*.6/n,spV=Math.max(4*r,pool*.3);
+  const dp=Math.min(30/Math.max(1,b.km),gap*.12);out=[];let i=0;
+  for(let e=0;e<n;e++){
+    const pc=.06+gap*(e+.5)+(R('j'+e)-.5)*gap*.5,sp=R('s'+e)<ch,m=sp?5:3+Math.floor(R('m'+e)*3);
+    const per=(sp?spV*(.85+.3*R('v'+e)):r*(.7+.6*R('v'+e)))/m;
+    for(let j=0;j<m;j++){const rare=!sp&&R('r'+e+'_'+j)<.06;out.push({i:i++,e,p:clamp(pc+(j-(m-1)/2)*dp,.02,.98),v:Math.max(1,Math.round(per*(rare?5:1))),sp,rare})}
+  }
+  if(COIN_CACHE.size>50)COIN_CACHE.clear();COIN_CACHE.set(ck,out);return out;
 }
+// drops grouped: [{e,sp,coins,p (middle),v (total)}]
+function dropsOf(b){const m=new Map();for(const c of coinsFor(b)){let d=m.get(c.e);if(!d)m.set(c.e,d={e:c.e,sp:c.sp,coins:[],v:0});d.coins.push(c);d.v+=c.v}
+  for(const d of m.values())d.p=d.coins[d.coins.length>>1].p;return [...m.values()]}
+// a special drop can be grabbed from 5 min before your plane reaches it until 25 min after (never past landing)
+const SPW_CACHE=new Map();
+function spWindow(b,d){const k=b.key+'|'+b.dep+'|'+d.e;let w=SPW_CACHE.get(k);if(w)return w;const at=coinPassTime(b,d);w=[at-SP_EARLY,Math.min(b.arr,at+SP_WIN),at];if(SPW_CACHE.size>200)SPW_CACHE.clear();SPW_CACHE.set(k,w);return w}
 function minFareHere(now){const here=me&&me.at?(whereIs(me,now)||{}).ap:null;if(!here)return 0;let m=Infinity;for(const d of departures(here,now,24))if(d.dep>now+10*MIN&&zoneOpen(d.t.d))m=Math.min(m,fareOf(d.t));return isFinite(m)?m:0}
 function priceFor(t,now=Date.now(),cab='Y'){
   const ti=myTier(t.al),disc=ti>=0?TIER_DISC[ti]:0,cut=v=>v>=1000?10*Math.round(v*(1-disc)/10):5*Math.round(v*(1-disc)/5);
@@ -1496,21 +1523,30 @@ function coinWhere(b,c){
   for(const k in AP){if(k===b.o||k===b.d)continue;const a=AP[k],w=vec(a.lat,a.lon),d=v[0]*w[0]+v[1]*w[1]+v[2]*w[2];if(d>bd){bd=d;best=a}}
   return best&&Math.acos(Math.min(1,bd))*6371<350?'near '+best.city:'over '+C[0];
 }
-function coinLine(b,c,all){
-  const top=all.reduce((m,x)=>x.v>m.v?x:m,all[0]),last=c.i===all[all.length-1].i;
-  const title=`🪙 ${c.v.toLocaleString('en')} coins ${coinWhere(b,c)}`;
-  const body=c.i===top.i?'Biggest drop this flight. 2 min out.':last?'Last drop before you land. 2 min out.':c.i===0?'First drop of the flight. 2 min out.':
-    ['2 min out. Have the app open to grab them.','Passing in 2 min.','2 min out. Keep the app open.'][fnv(b.key+'m'+c.i)%3];
-  return [title,body];
+// alert history (this device): no two coin alerts within 3 hours, and at most 2 in any 24 hours, across all flights
+function alertLog(){try{return JSON.parse(localStorage.getItem('bp-coin-alerts')||'[]').filter(x=>x&&x.at>Date.now()-DAY*2)}catch(e){return []}}
+function planAlerts(b){
+  const now=Date.now(),hist=alertLog().filter(x=>x.k!==b.key||x.at<=now),picked=[];
+  const cands=dropsOf(b).filter(d=>d.sp&&!d.coins.some(c=>b.cc.includes(c.i))).map(d=>{const w=spWindow(b,d),lead=(10+Math.floor((fnv(b.key+'l'+d.e)%6)))*MIN;return {d,w,lead,at:Math.max(b.dep,w[2]-lead)}})
+    .filter(x=>x.w[1]>now&&x.at>now).sort((x,y)=>x.at-y.at);
+  for(const x of cands){
+    const all=[...hist,...picked];if(all.filter(h=>h.k===b.key).length>=2)break;
+    if(all.some(h=>Math.abs(h.at-x.at)<ALERT_GAP))continue;
+    if(all.filter(h=>h.at>x.at-DAY&&h.at<=x.at).length>=ALERTS_PER_DAY)continue;
+    picked.push({k:b.key,at:x.at,x});
+  }
+  try{localStorage.setItem('bp-coin-alerts',JSON.stringify([...hist,...picked.map(p=>({k:p.k,at:p.at}))]))}catch(e){}
+  return picked.map(p=>p.x);
 }
 function syncCoinAlerts(){
   const N=window.BoardingPassAlerts;if(!N)return;
-  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(',')+'|v4'+(CTRY?'c':''):'none';if(sig===alertSig)return;alertSig=sig;
+  const b=me&&me.booking,sig=b?b.key+'|'+(b.cabin||'Y')+'|'+b.cc.join(',')+'|v5'+(CTRY?'c':''):'none';if(sig===alertSig)return;alertSig=sig;
   try{
-    if(!b){N.cancelAll();return}
-    const all=coinsFor(b),list=all.filter(c=>!b.cc.includes(c.i)).map(c=>{
-      const [title,body]=coinLine(b,c,all);return {id:fnv(b.key+'a'+c.i)%2000000000,at:Math.round(coinPassTime(b,c)-2*MIN),title,body}});
-    N.schedule(JSON.stringify(list));
+    if(!b||b.tut){N.cancelAll();return}
+    const list=planAlerts(b).map(({d,w,lead})=>{const mid=d.coins[d.coins.length>>1],m=Math.round(Math.max(0,w[2]-Math.max(b.dep,w[2]-lead))/MIN);
+      return {id:fnv(b.key+'a'+d.e)%2000000000,at:Math.round(Math.max(b.dep,w[2]-lead)),title:`🪙 Special drop: ${d.v.toLocaleString('en')} coins`,
+        body:`${coinWhere(b,mid).replace(/^./,c=>c.toUpperCase())} in ${m} min. You'll have 25 min to grab it.`}});
+    if(list.length)N.schedule(JSON.stringify(list));else N.cancelAll();
   }catch(e){}
 }
 // pinned flight card on the phone's lock screen (Android app only): sent on booking, refreshed while the app is open
@@ -1533,8 +1569,10 @@ function coinTick(now){
   if(!me||!me.booking||readOnly){coinP=null;return}
   const b=me.booking;if(now<b.dep||now>=b.arr){coinP=null;return}
   const s=flightState(myTpl(b),b.dep,now),open=!document.hidden&&now-coinSeen<4000;coinSeen=document.hidden?coinSeen:now;
-  if(!open||coinP==null){coinP=s.p;return}
-  const got=coinsFor(b).filter(c=>c.p>coinP&&c.p<=s.p&&!b.cc.includes(c.i));coinP=s.p;
+  if(!open){coinP=s.p;return}if(coinP==null)coinP=s.p;
+  const all=coinsFor(b),got=all.filter(c=>!c.sp&&c.p>coinP&&c.p<=s.p&&!b.cc.includes(c.i));coinP=s.p;
+  // special drops: anywhere in their window counts
+  for(const d of dropsOf(b))if(d.sp&&!d.coins.some(c=>b.cc.includes(c.i))){const w=spWindow(b,d);if(now>=w[0]&&now<=w[1])got.push(...d.coins)}
   if(!got.length)return;
   const v=got.reduce((a,c)=>a+c.v,0);
   coinFx.push({t:now,v});
@@ -1646,7 +1684,7 @@ function landStep(){
       <div class="lupslot" id="lfUp"></div>${tap}</div>`;
   }else if(s.kind==='loyalty'){
     const L=r.loy,A=AIRLINES[L.al],t0=tierIdx(L.before),t1=tierIdx(L.after),up=t1>t0&&t1>=1,nx=TIERS[t1+1];
-    const perks=['','Business class · 5% off fares · +10% coins','First class · Lounge at hubs · 10% off · +25% coins','Partner lounges · Weekly upgrade · 20% off · +50% coins'][t1]||'';
+    const perks=['','Business class · 5% off fares · +10% coins · More special drops','First class · Lounge at hubs · 10% off · +25% coins · More special drops','Partner lounges · Weekly upgrade · 20% off · +50% coins · Most special drops'][t1]||'';
     h=up?`<div class="lstep stripe" data-act="tut-lf-next">${dots}<div class="lkick">${esc(A.name.toUpperCase())}</div><div class="lalogo">${logo(L.al,96)}</div><div class="lcity">${TIERS[t1].n} status</div><div class="lsub">${perks}</div>${confetti(60)}${tap}</div>`
       :`<div class="lstep tlight" data-act="tut-lf-next">${dots}<div class="lkick dk">${esc(A.name.toUpperCase())}</div><div class="lalogo">${logo(L.al,96)}</div><div class="lnum lpts"><b id="lfPts">+0</b><span>points</span></div>
         ${nx?`<div class="lloy">${tierChip(t1)}<div class="xpbar big"><i style="width:${Math.min(100,(L.after-TIERS[t1].p)/(nx.p-TIERS[t1].p)*100).toFixed(1)}%"></i></div>${tierChip(t1+1)}</div><div class="lsub dk">${(nx.p-L.after).toLocaleString('en')} to ${nx.n}</div>`:`<div class="lsub dk">${tierChip(t1)} Top status</div>`}${tap}</div>`;
@@ -1957,10 +1995,12 @@ function tripHTML(now,st){
     box=`<b>${label} <span class="mono" data-cd="${target}"></span></b><div>Gate ${esc(b.gate)} · Seat ${esc(b.seat)}</div>`}
   let h=`<div class="ph">${logo(b.al,40)}<div class="tx"><div class="meta">${esc(b.id)} · ${dateLbl(b.dep,A)}</div><h1>${esc(A.city)} to ${esc(B.city)}</h1></div>${st==='flying'?`<button class="ibtn ${follow?'on':''}" data-act="follow" aria-label="Follow plane">${ICON.target}</button>`:''}</div>`;
   h+=`<div class="card"><div class="gbox">${box}</div>${timeline(t,b.dep,b.arr,now,b)}</div>`;
-  {const cs=coinsFor(b),s2=st==='flying'?flightState(t,b.dep,now):{p:0},got=b.cc.length,missed=cs.filter(c=>c.p<=s2.p&&!b.cc.includes(c.i)).length;
-   h+=`<div class="card"><h2>Coins in the sky</h2><div class="sub">${st==='flying'?'Keep the app open to fly through them':'They appear along your route once you take off'}</div>
-     <div class="coinrow">${cs.map(c=>`<i class="${b.cc.includes(c.i)?'got':c.p<=s2.p?'miss':''}"></i>`).join('')}</div>
-     <div class="note" style="font-size:13px">${cs.filter(c=>b.cc.includes(c.i)).reduce((a,c)=>a+c.v,0).toLocaleString('en')} of ${cs.reduce((a,c)=>a+c.v,0).toLocaleString('en')} coins caught${missed?` · ${missed} missed`:''}</div></div>`}
+  {const cs=coinsFor(b),ds=dropsOf(b),s2=st==='flying'?flightState(t,b.dep,now):{p:0},has=c=>b.cc.includes(c.i);
+   const state=d=>{const n=d.coins.filter(has).length;if(n===d.coins.length)return 'got';const gone=d.sp?now>spWindow(b,d)[1]:d.coins[d.coins.length-1].p<=s2.p;return n?'part':gone?'miss':''};
+   const missed=ds.filter(d=>state(d)==='miss').length,nsp=ds.filter(d=>d.sp).length;
+   h+=`<div class="card"><h2>Coins in the sky</h2><div class="sub">${st==='flying'?'Fly through them with the app open':'They appear along your route once you take off'}${nsp?` · ${plural(nsp,'special drop')}, 25 min to grab each`:''}</div>
+     <div class="coinrow">${ds.map(d=>`<i class="${d.sp?'sp ':''}${state(d)}"></i>`).join('')}</div>
+     <div class="note" style="font-size:13px">${cs.filter(has).reduce((a,c)=>a+c.v,0).toLocaleString('en')} of ${cs.reduce((a,c)=>a+c.v,0).toLocaleString('en')} coins caught${missed?` · ${missed} missed`:''}</div></div>`}
   h+=peopleCard(b.key,st==='flying'?'On board':'Booked on this flight');
   h+=`<div class="card"><h2>${esc(b.type)}</h2><div class="sub">${al?esc(al.name):''} · ${(TYPES[b.type]||{}).s||''} seats</div>
     <div class="plane-art">${aircraftArt(b.type,al?al.color:'#1d4ed8')}</div>${status(st==='flying'?'In the air':'On time',st==='flying'?'live':'ok')}</div>`;
@@ -2084,7 +2124,7 @@ function openFlight(key){
     <div class="card rcard"><canvas id="routeCv"></canvas></div>
     <div class="card"><h2>This flight</h2><div class="sub">${esc(al.name)} · ${daysText(t.days).toLowerCase()==='daily'?'Daily':'Flies '+daysText(t.days)}</div>
       <div class="nums">${num('Seats',t.seats)}${num('Distance',Math.round(t.km).toLocaleString('en')+'<small> km</small>')}${num('Booked',ids.length)}</div>
-      ${me&&me.at?`<div class="xpgain">+${flightXp(me,t,t.km).toLocaleString('en')} XP</div> <div class="xpgain cg">Up to ${coinsFor({key,km:t.km,dep:inst.dep,arr:inst.arr,al:t.al}).reduce((a,c)=>a+c.v,0).toLocaleString('en')} coins to catch in flight</div>`:''}
+      ${me&&me.at?`<div class="xpgain">+${flightXp(me,t,t.km).toLocaleString('en')} XP</div> <div class="xpgain cg">${dropCount((inst.arr-inst.dep)/MIN,key)} coin drops in flight</div>`:''}
       ${unlocks.length?`<div class="checks">${unlocks.map(u=>`<div>${icon(ICON.check)}${u}</div>`).join('')}</div>`:`<div class="note" style="margin-top:16px;font-size:13px">Nothing new to collect</div>`}</div>
     <div class="card"><h2>${esc(t.type)}</h2><div class="sub">Cruises at ${fmtFt(t.alt)}</div><div class="plane-art">${aircraftArt(t.type,al.color)}</div>${status(live?'In the air':'On time',live?'live':'ok')}</div>`;
   if(ids.length) h+=`<div class="card"><div class="h3">Booked <span class="mono" style="color:var(--muted);font-weight:400">${ids.length}</span></div><div class="people">${ids.map(i=>personRow(i,players.get(i),'seat')).join('')}</div></div>`;
@@ -2150,6 +2190,7 @@ function bookBox(key){
   if(cabs.length>1)h+=`<div class="cabins">${cabs.map(c=>{const left=seatsLeft(key,t,c),open=cabinOpen(t.al,c),pc=priceFor(t,now,c);return `<button class="cabin ${c===cab?'on':''} ${left&&open?'':'full'}" data-act="cabin" data-v="${c}"><b>${CAB_NAME[c]}</b>${pc.upg?'<span class="upg">Upgrade</span>':coinTag(pc.f)}<small>${!open?`${ms('lock')}${CAB_NEED[c]}`:left?`${left} left`:'Full'}</small></button>`}).join('')}</div>`
     +(cab!=='Y'&&cabinOpen(t.al,cab)?`<div class="cabperk">${ms('chair')}Lounge before you fly · +${Math.round(CAB_XP[cab]*100)}% XP · ${CAB_PTS[cab]}x points</div>`:'');
   const pr=priceFor(t,now,cab),ti=myTier(t.al);
+  if(me&&me.at)h+=`<div class="spodds"><i></i>${Math.round(specialOdds(t,cab,key,inst.dep,inst.arr)*100)}% chance of a special drop</div>`;
   h+=`<button class="cta" data-act="book" data-v="${key}" ${why?'disabled':''}>${pr.standby&&me&&me.coins<pr.f?'Standby seat · free':pr.upg?`Upgrade to business · ${coinTag(pr.f)}`:`Book ${CAB_NAME[cab].toLowerCase()} · ${coinTag(pr.f)}`}</button>`
     +(why?`<div class="note" style="margin-top:12px;text-align:center;font-size:13px">${esc(why)}</div>`:ti>=1&&pr.full&&pr.full>pr.f?`<div class="note" style="margin-top:10px;text-align:center;font-size:13px">${TIERS[ti].n} price · was ${pr.full.toLocaleString('en')}</div>`:'');
   return h;
@@ -3202,10 +3243,20 @@ function draw(){
   }
   // coins waiting along my route, and a little pop when one is caught
   if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?flightState(myInst.t,b.dep,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
-    const ca=me.booking.tut?1:ss(35,55,z);if(ca>.02)for(const c of coinsFor(b)){if(c.p<=s.p||b.cc.includes(c.i))continue;const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))continue;const xy=proj(q);
-      if(xy[0]<-10||xy[0]>W+10||xy[1]<-10||xy[1]>H+10)continue;ctx.globalAlpha=ca;const bob=Math.sin(now/300+c.i)*1.5;
-      ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,r,0,7);ctx.fillStyle='#ffd23f';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
-      ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,r-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle='#d99a00';ctx.stroke();ctx.globalAlpha=1}
+    const ca=me.booking.tut?1:ss(35,55,z);
+    const coinAt=(c,col,ring,rr,alpha)=>{const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))return null;const xy=proj(q);if(xy[0]<-12||xy[0]>W+12||xy[1]<-12||xy[1]>H+12)return null;
+      const bob=Math.sin(now/300+c.i)*1.5;ctx.globalAlpha=alpha;ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr,0,7);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
+      ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle=ring;ctx.stroke();
+      if(c.rare){ctx.fillStyle='#fff';ctx.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4,l=k%2?2:5.5;ctx.lineTo(xy[0]+Math.cos(a)*l,xy[1]+bob+Math.sin(a)*l)}ctx.closePath();ctx.fill()}
+      ctx.globalAlpha=1;return xy};
+    for(const d of dropsOf(b)){
+      if(d.coins.every(c=>b.cc.includes(c.i)))continue;
+      if(d.sp){ // special: always on the map, glowing, until its window closes
+        const w=spWindow(b,d);if(now>w[1])continue;const mid=d.coins[d.coins.length>>1],q=pt(A,B,mid.p);
+        if(onFace(q[0],q[1])){const xy=proj(q),pr=(now%1600)/1600;ctx.beginPath();ctx.arc(xy[0],xy[1],12+pr*16,0,7);ctx.strokeStyle=`rgba(47,143,240,${(.7*(1-pr)).toFixed(3)})`;ctx.lineWidth=3;ctx.stroke()}
+        for(const c of d.coins)if(!b.cc.includes(c.i))coinAt(c,'#2f8ff0','#bfe0ff',8,1);
+      }else if(ca>.02)for(const c of d.coins){if(c.p<=s.p||b.cc.includes(c.i))continue;coinAt(c,'#ffd23f','#d99a00',c.rare?9:7,ca)}
+    }
     const pxy=st==='flying'&&onFace(s.lon,s.lat)?proj([s.lon,s.lat]):null;coinFx=coinFx.filter(f=>now-f.t<1400);
     if(pxy)for(const f of coinFx){const k=(now-f.t)/1400;ctx.font='700 16px Fredoka, Nunito, sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#26304a';
       ctx.strokeText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.fillStyle='#ffd23f';ctx.fillText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.globalAlpha=1;ctx.textAlign='left'}}
