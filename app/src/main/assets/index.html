@@ -419,6 +419,60 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .lcd b{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--text)}
 .alrow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .alname{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text2);line-height:18px}
+
+#coach{position:fixed;inset:0;z-index:60;pointer-events:none}
+#coach.hidden,#tut.hidden{display:none}
+#coach .cspot{position:fixed;box-shadow:0 0 0 3000px rgba(10,24,52,.6);border:3px solid #ffd23f;transition:left .25s var(--ease),top .25s var(--ease),width .25s var(--ease),height .25s var(--ease)}
+#coach.nodim .cspot{box-shadow:none;border:0}
+#coach .cbub{position:fixed;left:16px;right:16px;max-width:420px;margin:0 auto;background:#fff;border:2.5px solid var(--ink);border-radius:18px;padding:14px 16px;font-size:16px;line-height:22px;box-shadow:0 5px 0 var(--ink);color:var(--text);pointer-events:auto;font-weight:600}
+#coach .cbub b{font-family:var(--disp);font-weight:600}
+#coach .cbtn{height:44px;font-size:16px;margin-top:12px;width:100%}
+#coach .cskip{position:fixed;right:16px;top:calc(env(safe-area-inset-top) + 64px);background:#fff;border:2px solid var(--ink);border-radius:12px;padding:5px 14px;font-family:var(--disp);font-weight:600;font-size:14px;box-shadow:0 3px 0 var(--ink);pointer-events:auto;color:var(--text)}
+#tut{position:fixed;inset:0;z-index:70;overflow:auto}
+#tut .tfull{min-height:100%;position:relative;padding:calc(env(safe-area-inset-top) + 40px) 20px calc(env(safe-area-inset-bottom) + 36px)}
+#tut .stripe{background:var(--stripes);background-size:auto}
+#tut .tlight{background:var(--bg)}
+#tut .tcol{display:flex;flex-direction:column;align-items:center}
+#tut .tpad{position:relative;max-width:440px;margin:0 auto;padding-top:24px}
+#tut .tband{position:absolute;left:0;right:0;top:0;height:calc(env(safe-area-inset-top) + 210px);background:var(--stripes)}
+.ttile{width:104px;height:104px;margin-top:9vh;filter:drop-shadow(0 6px 0 rgba(10,40,90,.35))}.ttile svg{width:104px;height:104px}
+.twm{font-family:var(--disp);font-weight:700;font-size:36px;color:#fff;margin-top:18px;text-shadow:0 3px 0 rgba(10,40,90,.35)}
+.ttag{color:#fff;font-size:17px;line-height:25px;text-align:center;margin-top:8px;font-weight:600}
+.tticket{background:#fff;border:2.5px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 var(--ink);width:100%;max-width:400px;position:relative;overflow:hidden;margin-top:20px}
+.tticket.tilt{margin:8vh 0 9vh;transform:rotate(-5deg);display:flex;align-items:center;justify-content:space-between;padding:18px 22px;animation:tslide .7s var(--ease) both}
+@keyframes tslide{from{transform:translateY(80px) rotate(4deg);opacity:0}to{transform:rotate(-5deg);opacity:1}}
+.tticket.punch{animation:tpunch .6s var(--ease)}
+@keyframes tpunch{0%{transform:none}30%{transform:scale(.94) rotate(-1.5deg)}60%{transform:scale(1.04) rotate(1deg)}100%{transform:translateY(-30px);opacity:.2}}
+.tkl span{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--muted)}.tkl b{display:block;font-family:var(--disp);font-weight:700;font-size:32px;line-height:38px;color:var(--text)}.tkl.r{text-align:right}
+.tkp{font-size:26px;color:var(--orange)}
+.tktop{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--raised);border-bottom:2px dashed #b8cbe6}
+.tktop span{display:block;font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--muted)}.tktop b{font-family:var(--disp);font-size:21px;font-weight:700;color:var(--text)}
+.tav{width:44px;height:44px;flex:none;border-radius:50%;color:#fff;font-family:var(--disp);font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center;border:2.5px solid var(--ink)}
+.tklv{margin-left:auto;background:var(--orange);color:#fff;font-family:var(--disp);font-weight:600;font-size:13px;padding:3px 10px;border-radius:999px}
+.tkmid{display:flex;align-items:center;justify-content:space-between;padding:12px 18px}
+.tkfoot{display:flex;gap:18px;padding:0 18px 14px;align-items:flex-end}.tkfoot span{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--muted)}.tkfoot b{font-family:var(--disp);font-size:15px;font-weight:600;color:var(--text)}
+.tbars{margin-left:auto;width:70px;height:28px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 7px,transparent 7px 9px)}
+.th1{font-family:var(--disp);font-weight:700;font-size:30px;line-height:36px;color:#fff;text-shadow:0 2px 0 rgba(10,40,90,.35)}.th1.c{text-align:center}
+.tsub{color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-top:2px}
+.tlbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
+.tfield{width:100%;height:54px;border-radius:16px;border:2.5px solid var(--accent);background:#fff;padding:0 16px;font-family:var(--disp);font-size:20px;font-weight:600;color:var(--text);outline:none;box-shadow:0 0 0 4px rgba(30,123,230,.15)}
+.tsw{display:flex;gap:10px;flex-wrap:wrap}.tsw button{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--ink)}.tsw button.sel{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--accent)}
+.tbig{height:60px;font-size:21px;width:100%;max-width:440px;margin-top:auto}
+.tfix{position:sticky;bottom:0;display:block;margin:40px auto 0}
+.tkick{color:#fff;font-weight:800;letter-spacing:.16em;font-size:14px;margin-bottom:6px}
+.tstamp{width:100%;max-width:320px;aspect-ratio:6/5;background:#fff;border-radius:26px;border:2.5px solid var(--ink);box-shadow:0 6px 0 var(--ink);margin-top:24px;display:flex;align-items:center;justify-content:center}
+.tstamp img,.tstamp svg,.tstamp .stampart{width:80%;transform:rotate(-8deg);animation:tthump .5s cubic-bezier(.2,1.6,.4,1) .2s both}
+@keyframes tthump{from{transform:scale(2.2) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(-8deg);opacity:1}}
+.tgains{display:flex;gap:10px;margin:22px 0 32px;width:100%;max-width:400px}.tgains div{flex:1;background:#fff;border:2.5px solid var(--ink);border-radius:16px;padding:10px 6px;text-align:center}
+.tgains b{display:block;font-family:var(--disp);font-weight:700;font-size:23px;color:var(--text)}.tgains b.cn{color:#c98400}.tgains span{font-size:12px;font-weight:800;color:var(--muted)}
+.th1d{font-family:var(--disp);font-weight:700;font-size:32px;margin-top:20px;color:var(--text)}
+.txpl{display:flex;justify-content:space-between;width:100%;max-width:440px;margin-top:8px;font-size:13px;font-weight:800;color:var(--muted)}.txpl svg{width:13px;height:13px;vertical-align:-2px}
+#tut .xpbar{max-width:440px}
+.treward{display:flex;gap:14px;align-items:center;background:#fff8dc;border:2.5px solid #f0d36b;border-radius:20px;padding:16px;margin:30px 0 32px;width:100%;max-width:440px}
+.treward b{font-family:var(--disp);font-size:22px;font-weight:700;color:#8a5a00;display:block}.treward span{font-size:14px;color:#7a5b00;font-weight:700;line-height:19px}
+.tcoin{width:52px;height:52px;flex:none;border-radius:50%;background:#ffd23f;border:3px solid var(--ink);box-shadow:inset 0 0 0 5px #fff0a8}
+.lvcard{position:relative}
+.replay{position:absolute;right:12px;top:12px;font-size:12px;font-weight:800;color:var(--accent);background:var(--raised);border:2px solid var(--line);border-radius:10px;padding:4px 10px}
 </style>
 </head>
 <body>
@@ -451,6 +505,8 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
   <button data-nav="ppl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 14.8c1.7.8 2.8 2.5 3 5.2"/></svg><span class="lbl">Players</span></button>
 </nav>
 <div id="modal" class="hidden"><div class="mbox" id="mbox"></div></div>
+<div id="coach" class="hidden"><div class="cspot"></div><div class="cbub"></div><button class="cskip" data-act="tut-skip">Skip</button></div>
+<div id="tut" class="hidden"></div>
 <div id="toast"></div>
 
 <script>/* d3-array + d3-geo (ISC licence, Mike Bostock) */
@@ -929,7 +985,7 @@ function daysText(m){if(m===127)return 'Daily';const n=['Sun','Mon','Tue','Wed',
 /* simulated flight physics: taxi → climb → cruise → descent → taxi */
 function flightState(t,dep,now){
   const A=AP[t.o],B=AP[t.d],T=TYPES[t.type]||TYPES['A320neo'];
-  const e=(now-dep)/MIN,blk=t.blk,tout=10,tin=6,air=blk-tout-tin;
+  const e=(now-dep)/MIN*(t.speed||1),blk=t.blk,tout=10,tin=6,air=blk-tout-tin;
   let p=0,phase='At gate',alt=0,gs=0;
   if(e<0){p=0;phase='At gate'}
   else if(e<tout){p=0;phase='Taxiing to runway';gs=28}
@@ -965,11 +1021,12 @@ function cleanPlayer(d){
   let b=null;
   const x=d.booking;
   if(x&&typeof x==='object'&&typeof x.key==='string'&&AP[x.o]&&AP[x.d]&&isFinite(x.dep)&&isFinite(x.arr))
-    b={key:x.key.slice(0,40),id:String(x.id||'').slice(0,8),al:String(x.al||'').slice(0,2),o:x.o,d:x.d,dep:+x.dep,arr:+x.arr,type:TYPES[x.type]?x.type:'A320neo',km:+x.km||0,seat:String(x.seat||'').slice(0,4),gate:String(x.gate||'').slice(0,4),fare:Math.max(0,+x.fare||0),cc:Array.isArray(x.cc)?x.cc.filter(n=>Number.isInteger(n)&&n>=0&&n<40).slice(0,40):[]};
+    b={key:x.key.slice(0,40),id:String(x.id||'').slice(0,8),al:String(x.al||'').slice(0,2),o:x.o,d:x.d,dep:+x.dep,arr:+x.arr,type:TYPES[x.type]?x.type:'A320neo',km:+x.km||0,seat:String(x.seat||'').slice(0,4),gate:String(x.gate||'').slice(0,4),fare:Math.max(0,+x.fare||0),tut:x.tut?1:0,cc:Array.isArray(x.cc)?x.cc.filter(n=>Number.isInteger(n)&&n>=0&&n<40).slice(0,40):[]};
   return {
     at:AP[d.at]?d.at:null, booking:b,
     visited:arr(d.visited,c=>!!AP[c]), airlines:arr(d.airlines,c=>!!AIRLINES[c]), types:arr(d.types,c=>!!TYPES[c]),
     km:+d.km||0, flights:+d.flights||0, since:+d.since||0,
+    name:String(d.name||'').replace(/[<>]/g,'').trim().slice(0,16), color:/^#[0-9a-f]{6}$/i.test(d.color||'')?d.color:'', tut:TUT_STEPS.includes(d.tut)?d.tut:'done',
     coins:isFinite(+d.coins)&&d.coins!==undefined&&d.coins!==null?Math.max(0,Math.round(+d.coins)):START_COINS, earned:+d.earned||0, daily:String(d.daily||'').slice(0,10),
     log:Array.isArray(d.log)?d.log.filter(l=>l&&AP[l.o]&&AP[l.d]).slice(-25).map(l=>({o:l.o,d:l.d,id:String(l.id||'').slice(0,8),at:+l.at||0,km:+l.km||0})):[]
   };
@@ -999,10 +1056,11 @@ function indexPlayers(){
     if(w&&w.kind==='ground'&&w.ap){ if(!atAirport.has(w.ap))atAirport.set(w.ap,[]); atAirport.get(w.ap).push(id); }
   }
 }
-const nameOf=id=>id===myId?'You':(names[id]||'Traveller');
+const pName=id=>{const p=players.get(id);return (p&&p.name)||names[id]||''};
+const nameOf=id=>id===myId?'You':(pName(id)||'Traveller');
 const AVC=['#475569','#0f766e','#9a3412','#6d28d9','#a16207','#be185d'];
-const colorOf=id=>id===myId?'#1d4ed8':AVC[fnv(id)%AVC.length];
-const initial=id=>(id===myId?'Y':(names[id]||'T').trim().charAt(0).toUpperCase()||'T');
+const colorOf=id=>{const p=players.get(id);return (p&&p.color)||(id===myId?'#1d4ed8':AVC[fnv(id)%AVC.length])};
+const initial=id=>(pName(id)||(id===myId?'You':'T')).trim().charAt(0).toUpperCase()||'T';
 let nameTimer=null;
 function refreshNames(){
   if(!user||!user.profiles)return;
@@ -1062,6 +1120,8 @@ async function initCloud(){
   },err=>{clearTimeout(to);cloudNote='Offline. Reload to reconnect.';if(!cloudReady){cloudReady=true;afterLoad()}else renderSheet()});
 }
 function afterLoad(){
+  if(!me||!me.at){if(!readOnly)setTimeout(tutWelcome,50)}
+  else if(me.tut==='land'){setTimeout(()=>{const L=me.log.at(-1);tutLanding({code:me.at,city:AP[me.at].city,gain:xpOf(me),pay:me.coins-START_COINS})},50)}
   tab=me&&me.at?'globe':'explore';
   const a=me&&me.at?AP[(whereIs(me,Date.now())||{}).ap||me.at]:null;
   centerOn((a||AP[START]).lon,(a||AP[START]).lat,me&&me.at?minZ*1.6:minZ);
@@ -1069,13 +1129,146 @@ function afterLoad(){
 }
 
 /* =====================================================================
+   INTRO + TUTORIAL: welcome → your pass → passport → globe → check in → book → a 10-second first flight → stamp → level up
+   ===================================================================== */
+const TUT_STEPS=['passport','globe','checkin','book','fly','land','done'];
+const TUT_COLORS=['#e5484d','#ff8a1f','#1e7be6','#25a849','#8a4fd6','#e0457b','#13a5b5','#26304a'];
+const TUT_FAST=10000; // the first flight takes 10 seconds
+let tutSub=0,tutPlane=null,tutPass={name:'',color:'#1e7be6'};
+const tutStep=()=>me&&me.at?(me.tut||'done'):null;
+function setTut(step){if(!me)return;save({...me,tut:step});tutSub=0;tutPlane=null;coachDraw()}
+function tutKey(){ // the suggested first flight: the next Sydney → Melbourne departure
+  const now=Date.now(),here=(whereIs(me,now)||{}).ap||START;
+  const deps=departures(here,now,24);
+  const d=deps.find(d=>d.t.d==='MEL')||deps.filter(d=>!me.visited.includes(d.t.d)&&zoneOpen(d.t.d)).sort((a,b)=>a.t.km-b.t.km)[0];
+  return d?d.key:null;
+}
+const tutFlightPossible=()=>me&&me.flights===0&&!me.booking;
+// a real booking that departs now and lands 10 seconds later; the plane runs the usual flight profile, sped up
+function tutBook(key){
+  const inst=parseKey(key);if(!inst)return;
+  const t=inst.t,now=Date.now(),dep=now+800;
+  save({...me,at:t.o,tut:'fly',booking:{key:'TUT-'+key,id:t.id,al:t.al,o:t.o,d:t.d,dep,arr:dep+TUT_FAST,type:t.type,km:t.km,seat:seatFor(key,t),gate:gateFor(key),fare:0,cc:[],tut:1}});
+  closeModal();selected=null;renderCard();setTab('globe');follow=true;
+  const A=AP[t.o];centerOn(A.lon,A.lat,32);
+}
+// ---------- full-screen tutorial pages ----------
+function tutShow(html){const el=$('tut');el.innerHTML=html;el.classList.remove('hidden')}
+function tutHide(){$('tut').classList.add('hidden');$('tut').innerHTML=''}
+function tutWelcome(){
+  tutShow(`<div class="tfull stripe tcol"><div class="ttile">${ICON.mark}</div><div class="twm">Boarding Pass</div>
+    <div class="ttag">Fly the real world in real time.<br>Collect every airport.</div>
+    <div class="tticket tilt"><div class="tkl"><span>FROM</span><b>SYD</b><span>Sydney</span></div><div class="tkp">✈</div><div class="tkl r"><span>TO</span><b>???</b><span>Anywhere</span></div></div>
+    <button class="cta tbig" data-act="tut-pass">Get my boarding pass</button></div>`);
+}
+function tutPassHTML(){
+  const p=tutPass,nm=(p.name||'').trim(),init=(nm||'?').charAt(0).toUpperCase(),d=new Date();
+  return `<div class="tfull tlight"><div class="tband"></div><div class="tpad">
+    <div class="th1">Create your pass</div><div class="tsub">This is how other players will see you</div>
+    <div class="tticket"><div class="tktop"><div class="tav" style="background:${p.color}">${esc(init)}</div><div><span>PASSENGER</span><b id="tpName">${esc(nm.toUpperCase()||'YOUR NAME')}</b></div><div class="tklv">Lv 1</div></div>
+      <div class="tkmid"><div class="tkl"><span>FROM</span><b>SYD</b><span>Sydney</span></div><div class="tkp">✈</div><div class="tkl r"><span>TO</span><b>— — —</b><span>Your call</span></div></div>
+      <div class="tkfoot"><div><span>DATE</span><b>${d.getDate()} ${MONU[d.getMonth()]}</b></div><div><span>GATE</span><b>D34</b></div><div><span>SEAT</span><b>33F</b></div><div class="tbars"></div></div></div>
+    <div class="tlbl">Your name</div><input id="tpIn" class="tfield" maxlength="16" placeholder="Type a name" value="${esc(p.name)}" autocomplete="off">
+    <div class="tlbl">Your colour</div><div class="tsw">${TUT_COLORS.map(c=>`<button data-act="tut-col" data-v="${c}" class="${c===p.color?'sel':''}" style="background:${c}" aria-label="Colour"></button>`).join('')}</div></div>
+    <button class="cta tbig tfix" data-act="tut-print" ${nm.length<2?'disabled':''}>Print my pass</button></div>`;
+}
+function tutPassScreen(){
+  tutShow(tutPassHTML());
+  const inp=$('tpIn');inp.addEventListener('input',()=>{tutPass.name=inp.value.replace(/[^\p{L}\p{N} '\-.]/gu,'').slice(0,16);
+    const nm=tutPass.name.trim();$('tpName').textContent=nm.toUpperCase()||'YOUR NAME';document.querySelector('#tut .tav').textContent=(nm||'?').charAt(0).toUpperCase();
+    document.querySelector('#tut [data-act=tut-print]').disabled=nm.length<2});
+}
+function tutPrint(){
+  const nm=tutPass.name.trim();if(nm.length<2)return;
+  const tk=document.querySelector('#tut .tticket');if(tk)tk.classList.add('punch');
+  setTimeout(()=>{startAt({name:nm,color:tutPass.color,tut:'passport'});tutHide();setTab('col');coachDraw()},650);
+}
+function tutLanding(info){
+  const st=IMG.stamps&&IMG.stamps[info.code]?`<img src="${IMG.stamps[info.code]}" alt="">`:stampSVG(info.code);
+  tutShow(`<div class="tfull stripe tcol" style="padding-top:calc(env(safe-area-inset-top) + 80px)"><div class="tkick">LANDED</div><div class="th1 c">Welcome to<br>${esc(info.city)}</div>
+    <div class="tstamp">${st}</div>
+    <div class="tgains"><div><b>+${info.gain.toLocaleString('en')}</b><span>XP</span></div><div><b class="cn">+${info.pay.toLocaleString('en')}</b><span>coins</span></div><div><b>${me.visited.length-1}</b><span>of ${APL.length} airports</span></div></div>
+    <button class="cta tbig" data-act="tut-done">Continue</button></div>`);
+}
+function tutDone(){
+  const L=levelOf(xpOf(me)),next=ZONE_LIST.find(([,z])=>z.lv>L.lv);
+  save({...me,tut:'done',coins:me.coins+250,earned:me.earned+250});
+  tutShow(`<div class="tfull tlight tcol" style="padding-top:calc(env(safe-area-inset-top) + 90px)">
+    <div class="lvbig"><span>Level</span><b>${L.lv}</b></div><div class="th1d">${esc(L.title)}</div>
+    <div class="xpbar" style="width:100%;margin-top:22px"><i style="width:${(L.cur/L.need*100).toFixed(1)}%"></i></div>
+    <div class="txpl"><span>Level ${L.lv}</span>${next?`<span>${ICON_LOCK} ${esc(next[1].n)} unlocks at Level ${next[1].lv}</span>`:''}</div>
+    <div class="treward"><div class="tcoin"></div><div><b>+250 coins</b><span>Tutorial complete. You’re cleared for take-off.</span></div></div>
+    <button class="cta tbig" data-act="tut-keep">Keep flying</button></div>`);
+}
+// ---------- coach marks over the live game ----------
+function coachRect(){
+  const st=tutStep();if(!st||st==='done')return null;
+  const q=s=>{const e=document.querySelector(s);return e&&e.offsetParent!==null?e.getBoundingClientRect():null};
+  const modalOpen=!$('modal').classList.contains('hidden');
+  if(st==='passport'&&tab==='col'&&!modalOpen)return {r:q('#sheetBody .lvcard'),txt:'<b>This is you.</b> Fly to earn XP, coins and stamps. Level up to open new regions.',btn:'Show me the world',act:'tut-next'};
+  if(st==='globe'&&tab==='globe'&&!modalOpen){
+    if(tutSub===0){
+      if(selected&&selected.kind==='plane'){tutSub=1}
+      else{let h=tutPlane&&hits.find(x=>x.kind==='plane'&&x.key===tutPlane);
+        if(!h){const c=hits.filter(x=>x.kind==='plane'&&x.y>H*.3&&x.y<H*.72&&x.x>40&&x.x<W-90);c.sort((a,b)=>Math.hypot(a.x-W/2,a.y-H/2)-Math.hypot(b.x-W/2,b.y-H/2));h=c[0];if(h)tutPlane=h.key}
+        return {r:h?{left:h.x-30,top:h.y-30,width:60,height:60,round:1}:null,txt:'<b>Tap any plane</b> to see the airline and where it’s going.'}}
+    }
+    return {r:q('#rail'),txt:'<b>Grey regions are locked.</b> Asia opens at Level 3, then the rest of the world.',btn:'Check in for my first flight',act:'tut-next',top:1};
+  }
+  if(st==='checkin'&&tab==='explore'&&!modalOpen){
+    if(!tutFlightPossible())return {r:null,txt:'<b>Pick any flight</b> from the board to start a trip.',btn:'Got it',act:'tut-skip'};
+    const k=tutKey(),el=k&&document.querySelector(`#sheetBody .fl[data-v="${k}"]`);
+    if(el&&!coachRect._scrolled){coachRect._scrolled=1;el.scrollIntoView({block:'center'})}
+    return {r:el?el.getBoundingClientRect():null,txt:`<b>Try this one:</b> a short hop to ${esc(el?AP[parseKey(k).t.d].city:'Melbourne')}. We’ll get you there fast.`};
+  }
+  if(st==='book'&&modalOpen){
+    const el=document.querySelector('#mbox [data-act=book]');
+    if(el&&!coachRect._scrolledB){coachRect._scrolledB=1;el.scrollIntoView({block:'center'})}
+    return {r:el?el.getBoundingClientRect():null,txt:'<b>Your first flight is on us.</b> After that, fares cost coins and landing pays some back.'};
+  }
+  if(st==='fly'&&tab==='globe'&&!modalOpen)return {r:null,txt:'<b>Fly through the coins</b> with the app open to catch them. We’ll ping you before each one.',bottom:1,nodim:1};
+  return null;
+}
+function coachDraw(){
+  const el=$('coach'),c=coachRect();
+  if(!c||!$('tut').classList.contains('hidden')){el.classList.add('hidden');return}
+  el.classList.remove('hidden');el.classList.toggle('nodim',!!c.nodim);
+  const sp=el.querySelector('.cspot'),bb=el.querySelector('.cbub');
+  if(c.r){const r=c.r,p=c.r.round?0:6;sp.style.display='block';Object.assign(sp.style,{left:(r.left-p)+'px',top:(r.top-p)+'px',width:(r.width+2*p)+'px',height:(r.height+2*p)+'px',borderRadius:c.r.round?'50%':'20px'})}
+  else{sp.style.display=c.nodim?'none':'block';Object.assign(sp.style,{left:W/2+'px',top:H/2+'px',width:'0px',height:'0px'})}
+  const html=c.txt+(c.btn?`<button class="cta cbtn" data-act="${c.act}">${c.btn}</button>`:'');
+  if(bb._h!==html){bb.innerHTML=html;bb._h=html}
+  const bh=bb.offsetHeight,r=c.r;let y;
+  if(c.bottom)y=H-bh-110;else if(c.top)y=Math.max(70,(r?r.top:H/2)-bh-24);
+  else if(r){const below=r.top+r.height+18;y=below+bh<H-90?below:Math.max(64,r.top-bh-18)}else y=H/2-bh/2;
+  bb.style.top=y+'px';
+}
+(function coachLoop(){try{if(!$('coach').classList.contains('hidden')||tutStep()&&tutStep()!=='done')coachDraw()}catch(e){}requestAnimationFrame(coachLoop)})();
+function tutAction(a,v){
+  switch(a){
+    case 'tut-pass':tutPassScreen();break;
+    case 'tut-col':tutPass.color=v;tutPassScreen();break;
+    case 'tut-print':tutPrint();break;
+    case 'tut-next':{const st=tutStep();
+      if(st==='passport'){setTut('globe');setTab('globe');const a=AP[START];centerOn(a.lon,a.lat,minZ*2.2)}
+      else if(st==='globe'){coachRect._scrolled=0;selected=null;renderCard();setTut('checkin');setTab('explore')}break}
+    case 'tut-skip':setTut('done');break;
+    case 'tut-done':tutDone();break;
+    case 'tut-keep':tutHide();setTab('explore');break;
+    case 'tut-replay':coachRect._scrolled=0;coachRect._scrolledB=0;setTut('passport');break;
+    default:return false;
+  }
+  return true;
+}
+
+/* =====================================================================
    GAME ACTIONS
    ===================================================================== */
-function startAt(){
-  const code=START,now=Date.now();
-  save({at:code,booking:null,visited:[code],airlines:[],types:[],km:0,flights:0,since:now,log:[],coins:START_COINS,earned:0,daily:new Date().toISOString().slice(0,10)});
+function startAt(prof){
+  const code=START,now=Date.now();prof=prof||{};
+  save({name:prof.name||'',color:prof.color||'',tut:prof.tut||'done',at:code,booking:null,visited:[code],airlines:[],types:[],km:0,flights:0,since:now,log:[],coins:START_COINS,earned:0,daily:new Date().toISOString().slice(0,10)});
   const a=AP[code];centerOn(a.lon,a.lat,minZ*1.5);tab='explore';
-  toast(`Checked in at ${a.city}`);
+  if(!prof.tut||prof.tut==='done')toast(`Checked in at ${a.city}`);
 }
 function seatFor(key,t){const T=TYPES[t.type];const h=fnv(myId+key);const rows=Math.max(10,Math.round(T.s/T.ab.length));return (1+h%rows)+T.ab[(h>>>8)%T.ab.length]}
 function gateFor(key){const h=fnv(key+'gate');return 'ABCDEFG'[h%7]+(1+(h>>>5)%40)}
@@ -1138,6 +1331,7 @@ function canBook(inst,now=Date.now()){
   return null;
 }
 function book(key){
+  if(tutStep()==='book'&&tutFlightPossible()&&key===tutKey()){tutBook(key);return}
   const inst=parseKey(key);if(!inst)return;
   const why=canBook(inst);if(why){toast(why);return}
   const t=inst.t,pr=priceFor(t),paid=pr.standby&&me.coins<pr.f?0:pr.f;
@@ -1185,9 +1379,11 @@ function checkLanding(){
     km:Math.round(me.km+b.km),flights:me.flights+1,log:[...me.log,{o:b.o,d:b.d,id:b.id,at:b.arr,km:b.km}].slice(-25)};
   const lvB=before.lv,lvA=levelOf(xpOf(doc)).lv;let pay=Math.round((b.fare||0)*.5)+(isNew?NEW_AP_BONUS:0);for(let l=lvB+1;l<=lvA;l++)pay+=100*l;
   doc.coins=me.coins+pay;doc.earned=me.earned+pay;
+  if(b.tut&&doc.tut==='fly')doc.tut='land';
   save(doc).finally(()=>{finalizing=false});
   const a=AP[b.d];
   const after=levelOf(xpOf(doc)),gain=after.xp-before.xp;
+  if(b.tut&&doc.tut==='land'){tutLanding({code:b.d,city:a.city,gain,pay});return}
   toast(`Landed in ${a.city} · +${gain.toLocaleString('en')} XP · +${pay} coins`);
   if(after.lv>before.lv)setTimeout(()=>showLevelUp(after),900);
   if(follow)centerOn(a.lon,a.lat,Math.max(view.z,4));
@@ -1416,7 +1612,7 @@ function flightRow(d,now,a){
     <div class="fl-h">${logo(t.al,36)}<div class="tx"><div class="meta">${t.id} · ${esc(shortType(t.type))}</div><b>${esc(B.city)}</b></div><div class="tags">${tags}</div></div>
     <div class="fl-t"><span class="dep">${hhmm(d.dep,a)}</span><span class="arr">${hhmm(d.arr,B)} ${B.code}</span><span class="dur">${blkTxt(t.blk)}${tag?' · '+tag:''}</span>${status(s,cls)}</div></div>`;
 }
-function myTpl(b){return TPL_BY_ID.get(b.id)||{o:b.o,d:b.d,blk:Math.round((b.arr-b.dep)/MIN),type:b.type,alt:35000,wind:0}}
+function myTpl(b){if(b.tut){const r=TPL_BY_ID.get(b.id),blk=r?r.blk:90;return {o:b.o,d:b.d,blk,speed:blk*MIN/(b.arr-b.dep),type:b.type,alt:r?r.alt:31000,wind:0,al:b.al}}return TPL_BY_ID.get(b.id)||{o:b.o,d:b.d,blk:Math.round((b.arr-b.dep)/MIN),type:b.type,alt:35000,wind:0}}
 const instKeyOf=(t,dep)=>t.id+'-'+localDay(dep,AP[t.o]);
 function timeline(t,dep,arr,now,b){
   const A=AP[t.o],B=AP[t.d];
@@ -1467,8 +1663,8 @@ function passportHTML(now){
   const v=me.visited,countries=new Set(v.map(c=>AP[c].country)),rare=v.filter(isRare).length,here=(whereIs(me,now)||{}).ap;
   const curRegion=here?AP[here].zone:null;
   const L=levelOf(xpOf(me));
-  let h=`<div class="who">${avatar(myId)}<div><b>${esc(solo?'Your passport':(names[myId]||'Your passport'))}</b><span>Since ${me.since?dateLbl(me.since,AP[START]):'today'}</span></div></div>
-    <div class="card lvcard"><div class="lvrow"><div class="lvbadge"><b>${L.lv}</b><span>Level</span></div><div class="lvtx"><b>${esc(L.title)}</b><span>${L.cur.toLocaleString('en')} / ${L.need.toLocaleString('en')} XP</span></div></div>
+  let h=`<div class="who">${avatar(myId)}<div><b>${esc(me.name||(solo?'Your passport':(names[myId]||'Your passport')))}</b><span>Since ${me.since?dateLbl(me.since,AP[START]):'today'}</span></div></div>
+    <div class="card lvcard"><button class="replay" data-act="tut-replay">Replay tutorial</button><div class="lvrow"><div class="lvbadge"><b>${L.lv}</b><span>Level</span></div><div class="lvtx"><b>${esc(L.title)}</b><span>${L.cur.toLocaleString('en')} / ${L.need.toLocaleString('en')} XP</span></div></div>
       <div class="xpbar"><i style="width:${(L.cur/L.need*100).toFixed(1)}%"></i></div></div>
     <div class="card"><h2>Airports collected</h2>
       <div class="hero-num"><b>${v.length}</b><span>of ${APL.length}</span></div><div class="goal"><i style="width:${(v.length/APL.length*100).toFixed(1)}%"></i></div>
@@ -1540,6 +1736,7 @@ function openCountry(id){
   $('mbox').innerHTML=h;$('modal').classList.remove('hidden');$('mbox').scrollTop=0;tick();
 }
 function openFlight(key){
+  if(tutStep()==='checkin'&&tutFlightPossible()&&key===tutKey()){coachRect._scrolledB=0;save({...me,tut:'book'})}
   const inst=parseKey(key);if(!inst)return;
   const t=inst.t,A=AP[t.o],B=AP[t.d],al=AIRLINES[t.al],now=Date.now();
   const why=canBook(inst,now),mine=me&&me.booking&&me.booking.key===key,ids=onFlight.get(key)||[];
@@ -1553,10 +1750,10 @@ function openFlight(key){
       ${unlocks.length?`<div class="checks">${unlocks.map(u=>`<div>${icon(ICON.check)}${u}</div>`).join('')}</div>`:`<div class="note" style="margin-top:16px;font-size:13px">Nothing new to collect</div>`}</div>
     <div class="card"><h2>${esc(t.type)}</h2><div class="sub">Cruises at ${fmtFt(t.alt)}</div><div class="plane-art">${aircraftArt(t.type,al.color)}</div>${status(live?'In the air':'On time',live?'live':'ok')}</div>`;
   if(ids.length) h+=`<div class="card"><div class="h3">Booked <span class="mono" style="color:var(--muted);font-weight:400">${ids.length}</span></div><div class="people">${ids.map(i=>personRow(i,players.get(i),'seat')).join('')}</div></div>`;
-  h+=mine?`<button class="cta" data-act="close">You're booked on this flight</button>`:`<button class="cta" data-act="book" data-v="${key}" ${why?'disabled':''}>${(()=>{const pr=priceFor(t,now);return pr.standby&&me&&me.coins<pr.f?'Standby seat · free':`Book · ${coinTag(pr.f)}`})()}</button>${why?`<div class="note" style="margin-top:12px;text-align:center;font-size:13px">${esc(why)}</div>`:''}`;
+  h+=mine?`<button class="cta" data-act="close">You're booked on this flight</button>`:(tutStep()==='book'&&tutFlightPossible()&&key===tutKey())?`<button class="cta" data-act="book" data-v="${key}">Board now · Free</button>`:`<button class="cta" data-act="book" data-v="${key}" ${why?'disabled':''}>${(()=>{const pr=priceFor(t,now);return pr.standby&&me&&me.coins<pr.f?'Standby seat · free':`Book · ${coinTag(pr.f)}`})()}</button>${why?`<div class="note" style="margin-top:12px;text-align:center;font-size:13px">${esc(why)}</div>`:''}`;
   $('mbox').innerHTML=h;$('modal').classList.remove('hidden');$('mbox').scrollTop=0;tick();
 }
-function closeModal(){$('modal').classList.add('hidden');needsDraw=true}
+function closeModal(){$('modal').classList.add('hidden');needsDraw=true;if(tutStep()==='book'&&tutFlightPossible())save({...me,tut:'checkin'})}
 
 /* tapped plane or airport */
 function renderCard(){
@@ -1589,9 +1786,10 @@ document.addEventListener('click',e=>{
   if(nav){setTab(nav.dataset.nav);return}
   const el=e.target.closest('[data-act]');if(!el)return;
   const v=el.dataset.v;
+  if(el.dataset.act.startsWith('tut-')&&tutAction(el.dataset.act,v))return;
   switch(el.dataset.act){
     case 'filter':newOnly=v==='new';renderSheet();break;
-    case 'start':startAt();break;
+    case 'start':tutWelcome();break;
     case 'flight':openFlight(v);break;
     case 'book':book(v);break;
     case 'cancel':cancelBooking();break;
@@ -2580,7 +2778,7 @@ function draw(){
   }
   // coins waiting along my route, and a little pop when one is caught
   if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?flightState(myInst.t,b.dep,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
-    const ca=ss(35,55,z);if(ca>.02)for(const c of coinsFor(b)){if(c.p<=s.p||b.cc.includes(c.i))continue;ctx.globalAlpha=ca;const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))continue;const xy=proj(q);
+    const ca=me.booking.tut?1:ss(35,55,z);if(ca>.02)for(const c of coinsFor(b)){if(c.p<=s.p||b.cc.includes(c.i))continue;ctx.globalAlpha=ca;const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))continue;const xy=proj(q);
       if(xy[0]<-10||xy[0]>W+10||xy[1]<-10||xy[1]>H+10)continue;const bob=Math.sin(now/300+c.i)*1.5;
       ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,r,0,7);ctx.fillStyle='#ffd23f';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
       ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,r-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle='#d99a00';ctx.stroke();ctx.globalAlpha=1}
