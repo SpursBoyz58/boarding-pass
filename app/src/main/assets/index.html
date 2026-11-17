@@ -1141,6 +1141,24 @@ const NEWAP=[];
     for(const [,Y] of cand.slice(0,2-same.length)){const al=serv.get(X.code)||serv.get(Y.code)||AIRLINE_LIST[0].code;add(al,X.code,Y.code);link(X.code,Y.code,al)}
   }
 }
+// 7) Harmattan Air: West Africa's own airline (hubs Lagos, Abidjan, Dakar). Joins last, so no existing flight number shifts.
+const HM_HUBS=new Set(['LOS','ABJ','DSS']);
+{
+  const A={code:'HM',name:'Harmattan Air',color:'#a0522d',region:'AF',hubs:['LOS','ABJ','DSS'],k:8};
+  AIRLINES.HM=A;AIRLINE_LIST.push(A);for(const h of A.hubs)HUBSET.add(h);
+  const WEST=X=>X.region==='AF'&&X.lon<16&&X.lat>-6&&X.lat<28;
+  A.hubs.forEach((h,hi)=>{
+    for(const X of APL){if(X.region!=='AF'||X.code===h)continue;const d=gdist(AP[h],X);
+      if(A.hubs.includes(X.code))addRoute('HM',h,X.code);
+      else if(WEST(X)&&(nearestHub(A,X)===h||d<=1500))addRoute('HM',h,X.code);
+      else if(X.tier<=2&&d<=(hi===0?5000:3000))addRoute('HM',h,X.code)}
+  });
+  // short hops between neighbours along the coast and across the Sahel
+  for(const X of APL.filter(WEST)){for(const [,Y] of APL.filter(Y=>Y!==X&&WEST(Y)).map(Y=>[gdist(X,Y),Y]).filter(p=>p[0]<900).sort((p,q)=>p[0]-q[0]).slice(0,2))addRoute('HM',X.code,Y.code)}
+  // long haul: Europe, the Gulf and the Americas
+  for(const [h,l] of [['LOS',['LHR','CDG','FRA','AMS','IST','DXB','DOH','JFK','ATL','GRU']],['ABJ',['CDG','BRU','IST','JFK']],['DSS',['CDG','MAD','LIS','IST','JFK']]])
+    for(const x of l)if(AP[x])addRoute('HM',h,x);
+}
 function pickType(d,ts,h){const b=pickType0(d,ts,h);
   // big hub-to-hub trunk routes get the four-engined giants now and then
   if(ts===2&&d>=6500&&TYPES[b].v===900&&!/ULR|LR/.test(b)){const q=(h>>>7)%5;if(q===0)return 'A380-800';if(q===1&&d>=8000)return '747-8'}
@@ -1174,11 +1192,11 @@ const TPL=[], TPL_BY_ID=new Map(), TPL_BY_ORIGIN=new Map();
 {
   const counters={};
   for(const r of routes.values()){
-    const A=AP[r.a],B=AP[r.b],d=gdist(A,B),ts=A.tier+B.tier,h=fnv(r.al+r.a+r.b);
+    const A=AP[r.a],B=AP[r.b],d=gdist(A,B),tr=X=>r.al==='HM'&&HM_HUBS.has(X.code)?Math.min(2,X.tier):X.tier,ts=tr(A)+tr(B),h=fnv(r.al+r.a+r.b);
     const type=pickType(d,ts,h),T=TYPES[type];
     const blk=Math.round((d*1.05/T.v*60+32)/5)*5;
     let n=freq(d,ts),days=127;
-    if((A.tier===3||B.tier===3)&&d>2000){ // remote island-style service: a few days a week
+    if((tr(A)===3||tr(B)===3)&&d>2000){ // remote island-style service: a few days a week
       n=1;days=0;const nd=2+h%3,st=h%7;for(let i=0;i<nd;i++)days|=1<<((st+Math.round(i*7/nd))%7);
     }
     const cls=d>4000?'L':d>1500?'M':'S', ck=r.al+cls;
@@ -1984,6 +2002,7 @@ const LOGO={
   AZ:()=>`<g fill="${LW}">${Array.from({length:12},(_,i)=>{const a=i*30*Math.PI/180,b=a+.26,c=a-.26;return `<path d="M${(24+17*Math.cos(a)).toFixed(1)} ${(24+17*Math.sin(a)).toFixed(1)}L${(24+11*Math.cos(b)).toFixed(1)} ${(24+11*Math.sin(b)).toFixed(1)}L${(24+11*Math.cos(c)).toFixed(1)} ${(24+11*Math.sin(c)).toFixed(1)}z"/>`}).join('')}</g><circle cx="24" cy="24" r="10" fill="${LW}"/><circle cx="24" cy="24" r="5.5" fill="#ffd23f"/>`,
   CS:()=>`<g fill="${LW}"><path d="${starPts(24,10,5,2.1)}"/><path d="${starPts(24,37,5.5,2.3)}"/><path d="${starPts(12.5,22,4.5,1.9)}"/><path d="${starPts(35,20,4.5,1.9)}"/></g><path d="${starPts(29.5,28,2.8,1.2)}" fill="#ffd23f"/>`,
   AN:()=>`<path d="M3 22c7-2.5 13 0 17 4l4-3.5 4 3.5c4-4 10-6.5 17-4-3 1-5 3-6 5 1.2 0 3 0 4 1-3 0-5 1-7 3l-3-2-9 7-9-7-3 2c-2-2-4-3-7-3 1-1 2.8-1 4-1-1-2-3-4-6-5z" fill="${LW}"/><circle cx="24" cy="19.5" r="3.4" fill="${LW}"/><path d="M22 23h4" stroke="#f1c40f" stroke-width="2.2" stroke-linecap="round"/>`,
+  HM:()=>`<circle cx="31" cy="16" r="6.5" fill="#ffd23f"/><g fill="none" stroke="${LW}" stroke-width="3.6" stroke-linecap="round"><path d="M7 26h21c3.2 0 5-1.8 5-4"/><path d="M11 33h26c3.2 0 5 1.8 5 4"/><path d="M7 40h17"/></g>`,
   PA:()=>`<circle cx="32" cy="15" r="5.5" fill="${LW}"/><g fill="none" stroke="${LW}" stroke-width="3.2" stroke-linecap="round"><path d="M14 39c0-9 2-15 6-20"/><path d="M20 39c0-7 3-12 8-15"/><path d="M26 39c1-5 4-8 9-10"/></g><path d="M8 39h32" stroke="${LW}" stroke-width="2.6" stroke-linecap="round"/>`
 };
 // airline logos: one flat tile per airline (240px webp)
@@ -2308,7 +2327,7 @@ function routeSnap(key){
 /* ---------- airline loyalty ----------
    Points per airline: 1 per km flown with it (2 in business, 3 in first); every alliance partner also gets 20%.
    Status only goes up. Higher status: cheaper fares, more coins in the air, lounges, and access to better cabins. */
-const ALLIANCES={Starline:['UZ','EQ','PK','GM','CW','NY','SW','LB','AN'],Horizon:['FN','LT','HR','PD','RX','LM','NS','MN','CS'],Compass:['HD','JS','MO','BZ','SZ','SP','AZ','PA']};
+const ALLIANCES={Starline:['UZ','EQ','PK','GM','CW','NY','SW','LB','AN'],Horizon:['FN','LT','HR','PD','RX','LM','NS','MN','CS'],Compass:['HM','HD','JS','MO','BZ','SZ','SP','AZ','PA']};
 const ALLIANCE_OF={};for(const [n,l] of Object.entries(ALLIANCES))for(const c of l)ALLIANCE_OF[c]=n;
 const TIERS=[{n:'Blue',p:1},{n:'Silver',p:15000},{n:'Gold',p:50000},{n:'Platinum',p:150000}];
 const TIER_DROP=[0,.1,.25,.5],TIER_DISC=[0,.05,.1,.2],CAB_PTS={Y:1,J:2,F:3},PARTNER_SHARE=.2,UPGRADE_EVERY=7*24*HOUR;
@@ -2561,7 +2580,7 @@ const LIVERY={UZ:['tail','#e4572e','#ffd23f'],FN:['wings','#159a6c','#ffffff'],E
   CW:['body','#1c3f94','#d62839'],RX:['stripe','#e0a800','#1a1a1a'],LM:['tail','#2a9df4','#d62839'],SZ:['wings','#ff6b35','#ffd23f'],
   NY:['stripe','#0aa5a5','#0b3d5c'],SW:['tail','#5f9a1f','#f2c94c'],NS:['nose','#c9940f','#1b3a6b'],LB:['body','#1565c0','#e53935'],
   SP:['stripe','#e53935','#ffb300'],MN:['nose','#d32f2f','#ffffff'],AZ:['wings','#00a884','#ffd23f'],CS:['body','#1b9e4b','#ffd23f'],
-  AN:['stripe','#8e44ad','#f1c40f'],PA:['nose','#3d8bfd','#ffffff']};
+  AN:['stripe','#8e44ad','#f1c40f'],PA:['nose','#3d8bfd','#ffffff'],HM:['tail','#a0522d','#ffd23f']};
 function sprite(kind,al,shadow){
   const key=kind+'|'+(shadow?'sh'+al:al);if(SPR[key])return SPR[key];
   const cv2=document.createElement('canvas');cv2.width=cv2.height=SPR_PX;const c=cv2.getContext('2d');cv2.addEventListener('contextlost',()=>{if(SPR[key]===cv2)delete SPR[key]});
