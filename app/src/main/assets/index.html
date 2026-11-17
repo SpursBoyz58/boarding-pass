@@ -2980,6 +2980,7 @@ function draw(){
   for(const a of APL){
     const ppl=(atAirport.get(a.code)||[]).filter(i=>i!==myId).length,special=vis.has(a.code)||a.code===here||ppl;
     const onSel=selRoute&&selRoute.includes(a.code);
+    if(routeView&&!onSel)continue;
     if(!special&&!onSel&&((a.tier===3&&z<8)||(a.tier===2&&z<4)))continue;
     if(!onFace(a.lon,a.lat))continue;
     const [x,y]=proj([a.lon,a.lat]);if(x<-40||x>W+40||y<-30||y>H+30)continue;
@@ -3002,7 +3003,7 @@ function draw(){
   // Flights with players on board, or the one you tapped, always show.
   // ...and in busy skies each patch of ground (about 100 px across) keeps one, longest flight first (patches are fixed to the map, so nothing flickers)
   const zq=Math.pow(2,Math.round(Math.log2(z))),cdeg=96/zq,cand=[];
-  for(const f of active){
+  for(const f of routeView?[]:active){
     if(myInst&&f.key===myInst.key)continue;
     const s=flightState(f.t,f.dep,now),v=vec(s.lat,s.lon),dp=v[0]*Vw[0]+v[1]*Vw[1]+v[2]*Vw[2];if(dp<=0)continue;
     const xy=proj([s.lon,s.lat]);if(xy[0]<-40||xy[0]>W+40||xy[1]<-40||xy[1]>H+40)continue;
@@ -3026,7 +3027,7 @@ function draw(){
     if(ppl)badge(xy[0]+ps+6,xy[1]-ps-5,ppl);
     if(show)hits.push({x:xy[0],y:xy[1],r:16,kind:'plane',key:f.key,pri:1});
   }
-  if(st==='flying'){
+  if(st==='flying'&&!routeView){
     const s=flightState(myInst.t,myInst.dep,now);
     if(onFace(s.lon,s.lat)){
       const xy=proj([s.lon,s.lat]),A=AP[myInst.t.o],B=AP[myInst.t.d],ang=headingOn(A,B,s.p,xy),others=(onFlight.get(myInst.key)||[]).length-1;
@@ -3055,7 +3056,7 @@ function draw(){
   // airport names sit above the planes so they're never hidden
   const hitsBox=(b)=>avoidBoxes.some(o=>!(b[2]<o[0]||b[0]>o[2]||b[3]<o[1]||b[1]>o[3]));
   for(const op of apLabelOps)if(!hitsBox(op.bx))op.fn();
-  drawZoneBadges();
+  if(!routeView)drawZoneBadges();
   updateOnline(now);
 }
 let lastDraw=0,wasMoving=false;
