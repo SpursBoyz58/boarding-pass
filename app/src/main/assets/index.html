@@ -417,6 +417,7 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .lct b{font-family:var(--disp);font-weight:600;font-size:30px;line-height:34px;color:var(--text);font-variant-numeric:tabular-nums}
 .lcd{margin-left:auto;text-align:right;display:flex;flex-direction:column}
 .lcd b{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--text)}
+.alname{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text2);line-height:18px}
 </style>
 </head>
 <body>
@@ -1563,7 +1564,7 @@ function renderCard(){
   if(selected.kind==='plane'){
     const inst=parseKey(selected.key);if(!inst||now>=inst.arr){selected=null;c.classList.add('hidden');return}
     const t=inst.t,s=flightState(t,inst.dep,now),al=AIRLINES[t.al],ids=onFlight.get(selected.key)||[],A=AP[t.o],B=AP[t.d];
-    h=`<div class="ph" style="padding:0">${logo(t.al,36)}<div class="tx"><div class="meta">${esc(t.id)} · ${esc(shortType(t.type))}</div><h1 style="font-size:17px;line-height:24px;margin-top:2px">${esc(A.city)} to ${esc(B.city)}</h1></div><button class="ibtn" data-act="uncard" aria-label="Close">${ICON.close}</button></div>
+    h=`<div class="ph" style="padding:0">${logo(t.al,36)}<div class="tx"><div class="alname">${esc(al?al.name:'')}</div><div class="meta">${esc(t.id)} · ${esc(shortType(t.type))}</div><h1 style="font-size:17px;line-height:24px;margin-top:2px">${esc(A.city)} to ${esc(B.city)}</h1></div><button class="ibtn" data-act="uncard" aria-label="Close">${ICON.close}</button></div>
       <div class="route"><div class="e"><span>${hhmm(inst.dep,A)}</span><b>${A.code}</b></div>${track(s.p)}<div class="e r"><span>${hhmm(inst.arr,B)}</span><b>${B.code}</b></div></div>
       <div class="mini"><div>Status<b>${esc(s.phase.replace('Landed · taxiing','Taxiing'))}</b></div><div>Altitude<b>${s.alt?Math.round(s.alt/1000)+',000 ft':'Ground'}</b></div><div>Lands in<b data-cd="${inst.arr}"></b></div></div>
       ${ids.length?`<div style="display:flex;align-items:center;gap:8px;margin-top:12px"><div class="avs">${ids.slice(0,5).map(i=>avatar(i)).join('')}</div><span class="note" style="font-size:13px">${plural(ids.length,'player')} on board</span></div>`:''}
@@ -2500,7 +2501,7 @@ function draw(){
     }
     ctx.drawImage(dcv,0,0,W,H);
   }
-  hits=[];
+  hits=[];selRoute=null;
   const here=me?(whereIs(me,now)||{}).ap:null,vis=new Set(me?me.visited:[]);
   // a tapped airport shows every route as a white line; planes on them get an outline: orange leaving, blue arriving
   if(selected&&selected.kind==='airport'){
@@ -2512,7 +2513,7 @@ function draw(){
   if(st==='airport'&&here&&!(selected&&selected.kind==='airport')){
     const seen=new Set();for(const d of departures(here,now,24)){if(seen.has(d.t.d))continue;seen.add(d.t.d);strokeArc(AP[here],AP[d.t.d],0,1,vis.has(d.t.d)?'rgba(255,255,255,.18)':'rgba(255,255,255,.42)',1)}
   }
-  if(selected&&selected.kind==='plane'&&(!myInst||selected.key!==myInst.key)){const inst=parseKey(selected.key);if(inst&&now<inst.arr){const s=flightState(inst.t,inst.dep,now),A=AP[inst.t.o],B=AP[inst.t.d];drawTrail(A,B,s.p,2.4);strokeArc(A,B,s.p,1,'rgba(255,255,255,.45)',1.2);drawDots(A,B,s.p,1,'#ffd23f',3.6)}}
+  if(selected&&selected.kind==='plane'&&(!myInst||selected.key!==myInst.key)){const inst=parseKey(selected.key);if(inst&&now<inst.arr){const s=flightState(inst.t,inst.dep,now),A=AP[inst.t.o],B=AP[inst.t.d];drawTrail(A,B,s.p,3);strokeArc(A,B,s.p,1,'rgba(18,40,75,.4)',4.2);strokeArc(A,B,s.p,1,'#ffffff',2.4,[6,7]);selRoute=[A.code,B.code]}}
   if(myInst){const s=st==='flying'?flightState(myInst.t,myInst.dep,now):{p:0};const A=AP[myInst.t.o],B=AP[myInst.t.d];drawTrail(A,B,s.p,3);strokeArc(A,B,s.p,1,'rgba(255,255,255,.55)',1.4);drawDots(A,B,s.p,1,'#ffffff',4)}
   // city lights on the night side
   const SUN=sunVec(now);
@@ -2521,7 +2522,8 @@ function draw(){
   const apBoxes=[],apLabelOps=[];
   for(const a of APL){
     const ppl=(atAirport.get(a.code)||[]).filter(i=>i!==myId).length,special=vis.has(a.code)||a.code===here||ppl;
-    if(!special&&((a.tier===3&&z<8)||(a.tier===2&&z<4)))continue;
+    const onSel=selRoute&&selRoute.includes(a.code);
+    if(!special&&!onSel&&((a.tier===3&&z<8)||(a.tier===2&&z<4)))continue;
     if(!onFace(a.lon,a.lat))continue;
     const [x,y]=proj([a.lon,a.lat]);if(x<-40||x>W+40||y<-30||y>H+30)continue;
     if(a.code===here){
@@ -2532,7 +2534,7 @@ function draw(){
       apPad(x,y,hs,!zoneOpen(a.code)?'#b9c4d3':vis.has(a.code)?'#ffd23f':'#f6eedd');
     }
     if(ppl)badge(x+7,y-11,ppl);
-    let lab=apLabel(a,z,here);
+    let lab=apLabel(a,z,here)||onSel;
     if(lab){ctx.font=`600 14px Fredoka, Nunito, -apple-system, sans-serif`;const lw=a._lw??(a._lw=ctx.measureText(a.city).width),bx=[x-6,y-10,x+14+lw,y+8];if(a.code!==here&&apBoxes.some(b=>!(bx[2]<b[0]||bx[0]>b[2]||bx[3]<b[1]||bx[1]>b[3])))lab=false;else apBoxes.push(bx)}
     if(lab)apLabelOps.push(()=>{ctx.font=`${a.code===here?600:500} ${a.tier===1||a.code===here?14:12.5}px Fredoka, Nunito, -apple-system, sans-serif`;ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle='rgba(18,40,75,.72)';ctx.strokeText(a.city,x+11,y+4.6);ctx.fillStyle='#fff';ctx.fillText(a.city,x+11,y+4.6)});
     hits.push({x,y,r:14,kind:'airport',code:a.code,pri:0,box:lab?[x+6,y-11,x+16+(a._lw||60),y+11]:null});
@@ -2630,7 +2632,7 @@ function endPtr(e){
 }
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 cv.addEventListener('wheel',e=>{e.preventDefault();anim=null;view.z=clamp(view.z*Math.exp(-e.deltaY*.0015),minZ,110);needsDraw=true},{passive:false});
-let CTRY=null;
+let CTRY=null,selRoute=null;
 (function(){const im=new Image();im.onload=()=>{const w=2048,h=1024,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;g.drawImage(im,0,0,w,h);
   const d=g.getImageData(0,0,w,h).data,a=new Uint8Array(w*h);for(let i=0;i<a.length;i++)a[i]=d[i*4];CTRY={w,h,a}};im.src=IMG.ctry})();
 function countryAt(lon,lat){if(!CTRY)return 0;const x=Math.floor((lon+180)/360*CTRY.w)%CTRY.w,y=clamp(Math.floor((90-lat)/180*CTRY.h),0,CTRY.h-1);return CTRY.a[y*CTRY.w+x]}
@@ -2649,6 +2651,7 @@ function tapAt(x,y){
     if(selected){selected=null;renderCard();needsDraw=true}return}
   selected=best.kind==='plane'?{kind:'plane',key:best.key}:{kind:'airport',code:best.code};
   renderCard();needsDraw=true;
+  if(best.kind==='plane'){const cb=$('card').getBoundingClientRect();if(best.y<cb.bottom+30){const ll=proj.invert([best.x,best.y]);if(ll)centerOn(ll[0],ll[1],view.z)}}
   if(best.kind==='airport'){const cb=$('card').getBoundingClientRect();if(best.y<cb.bottom+30){const a=AP[best.code];centerOn(a.lon,a.lat,view.z)}}
 }
 
