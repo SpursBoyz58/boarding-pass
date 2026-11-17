@@ -732,6 +732,8 @@ const TYPES = {
   '777-300ER':  {s:368,v:900, ab:'ABCDEFGHJK'},
   'A350-900ULR':{s:161,v:900, ab:'ACDGHK'},
   '777-200LR':  {s:301,v:900, ab:'ABCDEFGHJK'},
+  '747-8':      {s:410,v:900, ab:'ABCDEFGHJK'},
+  'A380-800':   {s:500,v:900, ab:'ABCDEFGHJK'},
 };
 
 /* =====================================================================
@@ -834,7 +836,12 @@ for(const A of AIRLINE_LIST){
     }
   }
 }
-function pickType(d,ts,h){
+function pickType(d,ts,h){const b=pickType0(d,ts,h);
+  // big hub-to-hub trunk routes get the four-engined giants now and then
+  if(ts===2&&d>=6500&&TYPES[b].v===900&&!/ULR|LR/.test(b)){const q=(h>>>7)%5;if(q===0)return 'A380-800';if(q===1&&d>=8000)return '747-8'}
+  return b;
+}
+function pickType0(d,ts,h){
   if(d<900&&ts>=4&&h%3===0) return h%2?'ATR 72-600':'Dash 8-400';
   if(d<1800&&ts>=5) return h%2?'E195-E2':'A220-300';
   if(d<5200) return ['A320neo','737 MAX 8','A321neo','A320neo'][h%4];
@@ -1297,13 +1304,16 @@ const icon=svg=>`<span class="ic">${svg}</span>`;
 const plural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
 // side-view airliner, painted like a real livery
 function aircraftArt(type,color){
-  const wide=/787|A330|A350|777/.test(type),prop=/ATR|Dash/.test(type),id='a'+(fnv(type+color)%99999);
+  const quad=/A380|747/.test(type),wide=quad||/787|A330|A350|777/.test(type),prop=/ATR|Dash/.test(type),id='a'+(fnv(type+color)%99999);
   const fy=wide?52:58,fh=wide?42:33,cy=fy+fh/2;
   let win='';for(let x=120;x<330;x+=wide?7.6:8.6)win+=`<rect x="${x}" y="${fy+fh*.3}" width="3.6" height="${wide?5.4:4.8}" rx="1.6" fill="#1f2a37" opacity=".85"/>`;
   const eng=prop
     ?`<rect x="196" y="${fy-11}" width="44" height="12" rx="6" fill="url(#${id}e)"/><rect x="238" y="${fy-28}" width="2.4" height="44" rx="1.2" fill="#3b4654" opacity=".4"/>`
     :`<rect x="166" y="${cy+11}" width="66" height="${wide?23:18}" rx="${wide?11.5:9}" fill="url(#${id}e)"/><rect x="226" y="${cy+12}" width="7" height="${wide?21:16}" rx="3" fill="#2a3442"/><rect x="170" y="${cy+16}" width="26" height="2.6" rx="1.3" fill="${color}"/>`;
   const wing=prop?`<path d="M176 ${fy+2} L150 ${fy-5} L264 ${fy-5} L248 ${fy+2}Z" fill="#c7cfd8"/>`:`<path d="M156 ${cy+7} L112 ${cy+31} L144 ${cy+31} L250 ${cy+8}Z" fill="#c4ccd6"/><path d="M112 ${cy+31} L144 ${cy+31}" stroke="#9aa5b2" stroke-width="1.2"/>`;
+  const extra=quad?`<rect x="118" y="${cy+5}" width="54" height="19" rx="9.5" fill="url(#${id}e)" opacity=".92"/><rect x="167" y="${cy+6}" width="6" height="17" rx="3" fill="#2a3442"/>`
+    +(/A380/.test(type)?Array.from({length:24},(_,i)=>`<rect x="${130+i*8.2}" y="${fy+fh*.08}" width="3.4" height="4.6" rx="1.5" fill="#1f2a37" opacity=".85"/>`).join('')
+      :`<path d="M260 ${fy} Q300 ${fy-14} 360 ${fy+2}" fill="url(#${id}f)" stroke="rgba(13,23,38,.14)" stroke-width=".8"/>`):'';
   return `<svg viewBox="0 0 410 140"><defs>
       <linearGradient id="${id}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eef2f6"/><stop offset="1" stop-color="#b8c2cd"/></linearGradient>
       <linearGradient id="${id}t" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${color}"/><stop offset="1" stop-color="${color}" stop-opacity=".78"/></linearGradient>
@@ -1315,7 +1325,7 @@ function aircraftArt(type,color){
     ${win}
     <path d="M364 ${fy+fh*.24} Q380 ${fy+fh*.3} 388 ${fy+fh*.44} L364 ${fy+fh*.44}Z" fill="#1f2a37"/>
     <rect x="${wide?300:308}" y="${fy+fh*.2}" width="9" height="${fh*.56}" rx="2" fill="none" stroke="#a6b0bc" stroke-width="1"/>
-    ${wing}${eng}</svg>`;
+    ${wing}${extra}${eng}</svg>`;
 }
 // passport stamps
 const INKS=['#1f4fa8','#0c7a4a','#b42318','#6b3fa0','#b4520c','#0f6e7a'];
@@ -1706,28 +1716,42 @@ const PLANE=[[0,-1],[.11,-.9],[.13,-.62],[.13,-.3],[.92,.08],[.98,.18],[.95,.28]
 /* ---------- chunky cartoon aircraft (original artwork, drawn once into small bitmaps) ---------- */
 const planeMinZ=km=>2.2*Math.pow(5000/Math.max(km,100),.75);
 const SPR={},SPR_PX=144,PLANE_PX=22,planeVis=new Map();let planeT=0;
-function planeKind(type){return /ATR|Dash/.test(type||'')?'prop':/787|A33|A35|777/.test(type||'')?'wide':'narrow'}
+// which top-down shape each model uses
+function planeKind(type){type=type||'';
+  return /ATR|Dash/.test(type)?'prop':/E195|A220/.test(type)?'rj':/A321/.test(type)?'narrowL':/A380/.test(type)?'a380':/747/.test(type)?'b747':/777/.test(type)?'wideL':/787|A33|A35/.test(type)?'wide':'narrow'}
+// relative on-map size, roughly following each model's real length and span
+const PLANE_SIZE={'ATR 72-600':.8,'Dash 8-400':.86,'E195-E2':.92,'A220-300':.9,'A320neo':1,'737 MAX 8':1,'A321neo':1.08,'787-8':1.28,'787-9':1.36,
+  'A330-900':1.36,'A350-900':1.42,'A350-900ULR':1.42,'777-200LR':1.4,'777-300ER':1.52,'747-8':1.58,'A380-800':1.66};
+const planeSize=type=>PLANE_SIZE[type]||1;
 function planeParts(kind){
   // right half of each part, nose pointing up (-y); units: the airframe is 100 long
-  const W=kind==='wide'?1.18:1;
   const P={};
   if(kind==='prop'){
     P.wing=[[4,-7],[50,-5],[52,-1],[50,5],[4,6]];P.tip=[[45,-5.2],[50,-5],[52,-1],[50,5],[45,5.2]];
     P.tail=[[3,35],[19,37],[20,41],[3,43]];P.ttip=[[16,36.6],[19,37],[20,41],[16,41.5]];
-    P.eng={x:17,y:-4,rx:4.6,ry:12.5};P.prop=true;P.fw=7.5;
-  }else{
-    P.wing=[[5,-5],[46*W,13*W],[48*W,17*W],[46*W,21*W],[5,11]];P.tip=[[41*W,11*W],[46*W,13*W],[48*W,17*W],[46*W,21*W],[41*W,20*W]];
-    P.tail=[[4,31],[20,41],[21,45.5],[4,43.5]];P.ttip=[[16.5,38.8],[20,41],[21,45.5],[16.5,44.8]];
-    P.eng=kind==='wide'?{x:22,y:3,rx:6,ry:11}:{x:18,y:1.5,rx:4.6,ry:9};P.fw=kind==='wide'?9:7.5;
+    P.engs=[{x:17,y:-4,rx:4.6,ry:12.5}];P.prop=true;P.fw=7.5;return P;
   }
-  return P;
+  // swept jet wing from a few numbers: half span, leading edge at root and tip, chord at root and tip
+  const G={rj:{fw:6.5,hs:42,yr:-4,yt:12,cr:15,ct:6,th:17,engs:[{x:14,y:1.5,rx:4,ry:8}]},
+    narrow:{fw:7.5,hs:48,yr:-5,yt:13,cr:16,ct:8,th:21,engs:[{x:18,y:1.5,rx:4.6,ry:9}]},
+    narrowL:{fw:7.5,hs:41,yr:-6,yt:10,cr:16,ct:7,th:19,engs:[{x:16,y:0,rx:4.8,ry:9}]},
+    wide:{fw:9,hs:48,yr:-8,yt:14,cr:21,ct:7,th:22,engs:[{x:21,y:1,rx:6.2,ry:11}]},
+    wideL:{fw:9.8,hs:46,yr:-9,yt:12,cr:22,ct:7,th:23,engs:[{x:21,y:0,rx:7.2,ry:13}]},
+    b747:{fw:9.5,hs:50,yr:-10,yt:16,cr:24,ct:6,th:23,hump:1,engs:[{x:18,y:-2,rx:5,ry:10},{x:33,y:6,rx:4.6,ry:9}]},
+    a380:{fw:12.5,hs:57,yr:-12,yt:12,cr:30,ct:7,th:25,engs:[{x:22,y:-4,rx:5.6,ry:10.5},{x:39,y:4,rx:5,ry:9.5}]}}[kind]||null;
+  const g=G||{fw:7.5,hs:48,yr:-5,yt:13,cr:16,ct:8,th:21,engs:[{x:18,y:1.5,rx:4.6,ry:9}]};
+  const r=g.fw-1,t=g.hs;
+  P.wing=[[r,g.yr],[t-2,g.yt],[t,g.yt+3],[t-1,g.yt+g.ct],[r,g.yr+g.cr]];
+  const k=(t-5-r)/(t-r);P.tip=[[t-5,g.yr+(g.yt-g.yr)*k],[t-2,g.yt],[t,g.yt+3],[t-1,g.yt+g.ct],[t-5,g.yr+g.cr+(g.yt+g.ct-g.yr-g.cr)*k]];
+  const th=g.th;P.tail=[[3.5,31],[th,41],[th+1,45.5],[3.5,43.5]];P.ttip=[[th-3.5,38.8],[th,41],[th+1,45.5],[th-3.5,44.8]];
+  P.engs=g.engs;P.fw=g.fw;P.hump=g.hump;return P;
 }
 function fusePath(c,fw){
   c.moveTo(0,-50);c.bezierCurveTo(fw*.7,-50,fw,-43,fw,-34);c.lineTo(fw,26);c.quadraticCurveTo(fw*.9,44,1.6,50);c.lineTo(-1.6,50);
   c.quadraticCurveTo(-fw*.9,44,-fw,26);c.lineTo(-fw,-34);c.bezierCurveTo(-fw,-43,-fw*.7,-50,0,-50);c.closePath();
 }
 function mirrorPoly(c,pts){for(const sx of [1,-1]){pts.forEach(([x,y],i)=>i?c.lineTo(x*sx,y):c.moveTo(x*sx,y));c.closePath()}}
-function engPath(c,e){for(const sx of [1,-1]){c.moveTo(e.x*sx+e.rx,e.y);c.ellipse(e.x*sx,e.y,e.rx,e.ry,0,0,Math.PI*2)}}
+function engPath(c,es){for(const e of es)for(const sx of [1,-1]){c.moveTo(e.x*sx+e.rx,e.y);c.ellipse(e.x*sx,e.y,e.rx,e.ry,0,0,Math.PI*2)}}
 /* each airline's livery: a pattern plus two colours, so every carrier is recognisable from above */
 const LIVERY={UZ:['tail','#e4572e','#ffd23f'],FN:['wings','#159a6c','#ffffff'],EQ:['stripe','#d62839','#1c2a5a'],LT:['body','#7b4fd6','#ffd23f'],
   HD:['nose','#d99a00','#c8102e'],PK:['tail','#e0457b','#ffffff'],HR:['stripe','#1f7ae0','#8fd3ff'],JS:['wings','#c8102e','#ffcc00'],
@@ -1741,7 +1765,7 @@ function sprite(kind,al,shadow){
   const cv2=document.createElement('canvas');cv2.width=cv2.height=SPR_PX;const c=cv2.getContext('2d');
   const k=SPR_PX/124;c.translate(SPR_PX/2,SPR_PX/2);c.scale(k,k);c.lineJoin='round';c.lineCap='round';
   const P=planeParts(kind);
-  const sil=()=>{c.beginPath();mirrorPoly(c,P.wing);mirrorPoly(c,P.tail);engPath(c,P.eng);fusePath(c,P.fw)};
+  const sil=()=>{c.beginPath();mirrorPoly(c,P.wing);mirrorPoly(c,P.tail);engPath(c,P.engs);fusePath(c,P.fw)};
   if(shadow&&al&&al.startsWith('ol')){const col=al.slice(2);sil();c.lineWidth=17;c.strokeStyle=col;c.stroke();c.fillStyle=col;c.fill();SPR[key]=cv2;return cv2}
   if(shadow){sil();c.fillStyle='rgba(8,32,72,.30)';c.fill();c.lineWidth=4;c.strokeStyle='rgba(8,32,72,.30)';c.stroke();SPR[key]=cv2;return cv2}
   const [pat,c1,c2]=LIVERY[al]||['tail','#ff9a1f','#ffcf3f'],WH='#ffffff';
@@ -1750,8 +1774,8 @@ function sprite(kind,al,shadow){
   c.beginPath();mirrorPoly(c,P.wing);c.fillStyle=wing;c.fill();
   c.beginPath();mirrorPoly(c,P.tail);c.fillStyle=tail;c.fill();
   c.beginPath();mirrorPoly(c,P.tip);mirrorPoly(c,P.ttip);c.fillStyle=pat==='tail'?c2:tip;c.fill();
-  c.beginPath();engPath(c,P.eng);c.fillStyle=eng;c.fill();c.lineWidth=2;c.strokeStyle='#26304a';c.stroke();
-  if(P.prop)for(const sx of [1,-1]){const e=P.eng;c.beginPath();c.ellipse(e.x*sx,e.y-e.ry-1.5,12,2.2,0,0,Math.PI*2);c.fillStyle='rgba(225,232,240,.9)';c.fill();c.lineWidth=1.4;c.strokeStyle='#26304a';c.stroke()}
+  c.beginPath();engPath(c,P.engs);c.fillStyle=eng;c.fill();c.lineWidth=2;c.strokeStyle='#26304a';c.stroke();
+  if(P.prop)for(const sx of [1,-1]){const e=P.engs[0];c.beginPath();c.ellipse(e.x*sx,e.y-e.ry-1.5,12,2.2,0,0,Math.PI*2);c.fillStyle='rgba(225,232,240,.9)';c.fill();c.lineWidth=1.4;c.strokeStyle='#26304a';c.stroke()}
   // fuselage with the airline's stripe or nose
   c.save();c.beginPath();fusePath(c,P.fw);c.fillStyle=fus;c.fill();c.clip();
   if(pat==='stripe'){c.fillStyle=c1;c.fillRect(-P.fw*.42,-36,P.fw*.84,86);c.fillStyle=c2;c.fillRect(-P.fw*.12,-30,P.fw*.24,78)}
@@ -1760,6 +1784,7 @@ function sprite(kind,al,shadow){
   if(pat==='body'||pat==='wings'||pat==='tail'){c.fillStyle=c2;c.globalAlpha=pat==='body'?.9:.0;c.fillRect(-P.fw*.15,-28,P.fw*.3,70);c.globalAlpha=1}
   c.restore();
   c.beginPath();fusePath(c,P.fw);c.lineWidth=2.2;c.strokeStyle='#26304a';c.stroke();
+  if(P.hump){c.beginPath();c.moveTo(-P.fw*.72,-34);c.quadraticCurveTo(-P.fw*.78,-8,0,-4);c.quadraticCurveTo(P.fw*.78,-8,P.fw*.72,-34);c.lineWidth=1.6;c.strokeStyle='rgba(38,48,74,.55)';c.stroke()}
   c.beginPath();c.moveTo(-P.fw*.55,-39);c.quadraticCurveTo(0,-45,P.fw*.55,-39);c.lineTo(P.fw*.5,-36);c.quadraticCurveTo(0,-40,-P.fw*.5,-36);c.closePath();c.fillStyle='#26304a';c.fill();
   // soft shading across the whole aircraft, darker on the right like the sun is top-left
   c.globalCompositeOperation='source-atop';const gs=c.createLinearGradient(-50,-40,50,40);gs.addColorStop(0,'rgba(255,255,255,.18)');gs.addColorStop(.5,'rgba(255,255,255,0)');gs.addColorStop(1,'rgba(10,30,70,.22)');
@@ -2532,7 +2557,7 @@ function draw(){
     const A=AP[f.t.o],B=AP[f.t.d],ang=headingOn(A,B,s.p,xy);
     const ppl=(onFlight.get(f.key)||[]).length,isSel=selected&&selected.key===f.key;
     const kd=planeKind(f.t.type),lift=s.alt?5*Math.min(1,s.alt/30000+.25):0;
-    drawJet(xy[0],xy[1],ang,isSel?30:s.alt?PLANE_PX:PLANE_PX*.8,kd,f.t.al,isSel?lift*1.3:lift,(s.alt?1:.8)*fade,ring);
+    drawJet(xy[0],xy[1],ang,PLANE_PX*planeSize(f.t.type)*(isSel?1.3:s.alt?1:.8),kd,f.t.al,isSel?lift*1.3:lift,(s.alt?1:.8)*fade,ring);
     if(ppl)badge(xy[0]+ps+6,xy[1]-ps-5,ppl);
     if(show)hits.push({x:xy[0],y:xy[1],r:16,kind:'plane',key:f.key,pri:1});
   }
@@ -2540,7 +2565,7 @@ function draw(){
     const s=flightState(myInst.t,myInst.dep,now);
     if(onFace(s.lon,s.lat)){
       const xy=proj([s.lon,s.lat]),A=AP[myInst.t.o],B=AP[myInst.t.d],ang=headingOn(A,B,s.p,xy),others=(onFlight.get(myInst.key)||[]).length-1;
-      drawJet(xy[0],xy[1],ang,PLANE_PX*1.25,planeKind(myInst.t.type),myInst.t.al,s.alt?6*Math.min(1,s.alt/30000+.25):0);
+      drawJet(xy[0],xy[1],ang,PLANE_PX*1.2*planeSize(myInst.t.type),planeKind(myInst.t.type),myInst.t.al,s.alt?6*Math.min(1,s.alt/30000+.25):0);
       if(others>0)badge(xy[0]+ps+8,xy[1]-ps-8,others+1);
       hits.push({x:xy[0],y:xy[1],r:20,kind:'plane',key:myInst.key,pri:2});
     }
