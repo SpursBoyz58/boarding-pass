@@ -2964,7 +2964,7 @@ in vec2 a;void main(){gl_Position=vec4(a,0.,1.);}`;
 const FS=`#version 300 es
 precision highp float;
 uniform vec2 uC2;uniform float uR,uMap,uNight,uClouds,uCS,uDpr,uStyle,uCloudA;uniform vec3 uCv,uEv,uNv,uSun;uniform vec2 uRes;
-uniform sampler2D tDay,tNight,tWater,tRel,tMap,tCloud,tLand,tUrb;uniform float uSdf,uUrb,uRelA,uLtex,uOpen,uCtry;uniform sampler2D tZone,tCtry;
+uniform sampler2D tDay,tNight,tWater,tRel,tMap,tCloud,tLand,tUrb,tNear;uniform float uSdf,uUrb,uRelA,uLtex,uOpen,uCtry;uniform sampler2D tZone,tCtry;
 out vec4 o;
 const float PI=3.14159265359;
 float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
@@ -3048,7 +3048,7 @@ void main(){
     land=mix(land,vec3(.47,.75,.32),zGrass);
     land=mix(land,vec3(.33,.61,.28),clump*zGrass*smoothstep(.3-we,.3+we,wet)*.9);
     float latd=abs(lat)*57.2958;float lond=lon*57.2958;float le0=fwidth(lum)+1e-4;float ice=smoothstep(.82-le0,.82+le0,lum)*max(max(step(72.,latd),step(lat,-1.)*smoothstep(58.,62.,latd)),step(59.,lat*57.2958)*step(-75.,lond)*step(lond,-10.));land=mix(land,vec3(.95,.97,1.),ice);
-    if(uSdf>0.&&uUrb>0.){float su=textureGrad(tUrb,uv,gx,gy).r-.5,au=max(fwidth(su),1e-6);land=mix(land,vec3(.93,.89,.81),.85*uUrb*(1.-smoothstep(-au,au,su)));}
+    if(uSdf>0.&&uUrb>0.){float su=textureGrad(tUrb,uv,gx,gy).r-.5,au=max(fwidth(su),1e-6),nr=textureGrad(tNear,uv,gx,gy).r;land=mix(land,vec3(.93,.89,.81),.85*uUrb*nr*(1.-smoothstep(-au,au,su)));}
     land*=1.+(rel.g-1.)*.3*(1.-smoothstep(3.,6.,uR/(57.3*uDpr)));
     // sandy beach just inside the coast
     float bw=clamp(uR/5000.,.8,2.2);
@@ -3067,7 +3067,7 @@ void main(){
     col=textureGrad(tDay,uv,gx,gy).rgb;
     if(uMap>0.){vec3 land=textureGrad(tMap,uv,gx,gy).rgb;float wat=smoothstep(.3,.7,water);
       if(uSdf>0.){float sd=textureGrad(tLand,uv,gx,gy).r-.5,aw=max(fwidth(sd),1e-5)*.7;wat=smoothstep(-aw,aw,sd);
-        if(uUrb>0.){float su=textureGrad(tUrb,uv,gx,gy).r-.5,au=max(fwidth(su),1e-5)*.7;land=mix(land,vec3(.91,.885,.84),.5*uUrb*(1.-smoothstep(-au,au,su)));}}
+        if(uUrb>0.){float su=textureGrad(tUrb,uv,gx,gy).r-.5,au=max(fwidth(su),1e-5)*.7,nr=textureGrad(tNear,uv,gx,gy).r;land=mix(land,vec3(.91,.885,.84),.5*uUrb*nr*(1.-smoothstep(-au,au,su)));}}
       vec3 mc=mix(land,vec3(.184,.431,.671),wat);col=mix(col,mc,uMap);}
     col*=mix(rel.r,1.+(rel.g-1.)*.65*uRelA,uMap);
     col=mix(ctryLook(lockLook(col,uv,gx,gy),uv),col,smoothstep(.3,.7,water));
@@ -3122,9 +3122,22 @@ let sdfReady=0;
 function loadCtryTex(){const im=new Image();im.onload=()=>{if(!GL)return;const g=GL,t=g.createTexture();g.activeTexture(g.TEXTURE0+9);g.bindTexture(g.TEXTURE_2D,t);g.pixelStorei(g.UNPACK_ALIGNMENT,1);
   g.texImage2D(g.TEXTURE_2D,0,g.R8,g.RED,g.UNSIGNED_BYTE,im);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.NEAREST);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.NEAREST);
   g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.REPEAT);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);needsDraw=true};im.src=IMG.ctry}
+// where built-up areas may show: within about 55 km of an airport in the game, fading out by 80 km
+function loadNearTex(){
+  const NW=2048,NH=1024,m=new Uint8Array(NW*NH),R=55,F=25,kpd=111.2;
+  for(const a of APL){const cl=Math.max(.05,Math.cos(a.lat*rad)),dy=(R+F)/kpd,dx=dy/cl;
+    const y0=Math.max(0,Math.floor((90-a.lat-dy)/180*NH)),y1=Math.min(NH-1,Math.ceil((90-a.lat+dy)/180*NH));
+    const x0=Math.floor((a.lon-dx+180)/360*NW),x1=Math.ceil((a.lon+dx+180)/360*NW);
+    for(let y=y0;y<=y1;y++){const la=90-(y+.5)/NH*180;for(let xx=x0;xx<=x1;xx++){const x=((xx%NW)+NW)%NW,lo=(xx+.5)/NW*360-180;
+      const d=Math.hypot((la-a.lat)*kpd,(lo-a.lon)*kpd*cl),w=1-ss(R,R+F,d);if(w>0){const v=w*255|0,i=y*NW+x;if(v>m[i])m[i]=v}}}}
+  const g=GL;if(!g)return;const t=g.createTexture();g.activeTexture(g.TEXTURE0+10);g.bindTexture(g.TEXTURE_2D,t);g.pixelStorei(g.UNPACK_ALIGNMENT,1);
+  g.texImage2D(g.TEXTURE_2D,0,g.R8,NW,NH,0,g.RED,g.UNSIGNED_BYTE,m);g.generateMipmap(g.TEXTURE_2D);
+  g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MIN_FILTER,g.LINEAR_MIPMAP_LINEAR);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_MAG_FILTER,g.LINEAR);
+  g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.REPEAT);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);needsDraw=true;
+}
 function loadSdf(){
   const max=GL.getParameter(GL.MAX_TEXTURE_SIZE);
-  [[6,IMG.land],[8,IMG.zone]].forEach(([unit,src])=>{
+  [[6,IMG.land],[7,IMG.urban],[8,IMG.zone]].forEach(([unit,src])=>{
     const im=new Image();im.onload=()=>{
       if(!GL)return;const g=GL;let srcEl=im;
       if(im.width>max){const c=document.createElement('canvas');c.width=max;c.height=max/2;c.getContext('2d').drawImage(im,0,0,max,max/2);srcEl=c}
@@ -3146,7 +3159,7 @@ function initGL(dayBytes){
     GLP=p;g.useProgram(p);
     const b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),g.STATIC_DRAW);
     const loc=g.getAttribLocation(p,'a');g.enableVertexAttribArray(loc);g.vertexAttribPointer(loc,2,g.FLOAT,false,0,0);
-    for(const n of ['uC2','uR','uMap','uNight','uClouds','uCS','uDpr','uCv','uEv','uNv','uSun','uRes','tDay','tNight','tWater','tRel','tMap','tCloud','tLand','tUrb','uSdf','uUrb','uRelA','uStyle','uCloudA','uLtex','tZone','uOpen','tCtry','uCtry'])GLU[n]=g.getUniformLocation(p,n);
+    for(const n of ['uC2','uR','uMap','uNight','uClouds','uCS','uDpr','uCv','uEv','uNv','uSun','uRes','tDay','tNight','tWater','tRel','tMap','tCloud','tLand','tUrb','tNear','uSdf','uUrb','uRelA','uStyle','uCloudA','uLtex','tZone','uOpen','tCtry','uCtry'])GLU[n]=g.getUniformLocation(p,n);
     const E=EARTH;
     glTex(0,E.dw,E.dh,'rgba',dayBytes);
     glTex(1,E.nw,E.nh,'r',E.night);
@@ -3154,8 +3167,8 @@ function initGL(dayBytes){
     const rg=new Uint8Array(E.tw*E.th*2);for(let i=0;i<E.tw*E.th;i++){rg[i*2]=E.relief[i];rg[i*2+1]=E.reliefSoft[i]}glTex(3,E.tw,E.th,'rg',rg);
     glTex(4,E.mw,E.mh,'rgba',new Uint8Array(E.mapt.buffer));
     glTex(5,CW,CH,'r',CLOUD);
-    ['tDay','tNight','tWater','tRel','tMap','tCloud','tLand','tUrb','tZone','tCtry'].forEach((n,i)=>g.uniform1i(GLU[n],i));
-    glTex(6,1,1,'r',new Uint8Array([255]));glTex(7,1,1,'r',new Uint8Array([255]));glTex(8,1,1,'r',new Uint8Array([0]));glTex(9,1,1,'r',new Uint8Array([0]));loadSdf();loadCtryTex();
+    ['tDay','tNight','tWater','tRel','tMap','tCloud','tLand','tUrb','tZone','tCtry','tNear'].forEach((n,i)=>g.uniform1i(GLU[n],i));
+    glTex(6,1,1,'r',new Uint8Array([255]));glTex(7,1,1,'r',new Uint8Array([255]));glTex(8,1,1,'r',new Uint8Array([0]));glTex(9,1,1,'r',new Uint8Array([0]));loadSdf();loadCtryTex();loadNearTex();
     if(g.getError()!==g.NO_ERROR)throw new Error('gl error');
     glc.style.display='block';document.body.classList.add('gpu');
     return true;
@@ -3170,7 +3183,7 @@ function renderGL(){
   const l0=view.lon*rad,p0=view.lat*rad,cl=Math.cos(l0),sl=Math.sin(l0),cp=Math.cos(p0),sp=Math.sin(p0);
   g.uniform3f(GLU.uCv,cp*cl,cp*sl,sp);g.uniform3f(GLU.uEv,-sl,cl,0);g.uniform3f(GLU.uNv,-sp*cl,-sp*sl,cp);
   g.uniform2f(GLU.uC2,W/2*GLDPR,(H-focusY())*GLDPR);g.uniform1f(GLU.uR,R()*GLDPR);g.uniform2f(GLU.uRes,cw,ch);g.uniform1f(GLU.uDpr,GLDPR);
-  g.uniform1f(GLU.uMap,mapT(view.z));g.uniform1f(GLU.uSdf,sdfReady&1);g.uniform1f(GLU.uUrb,0);g.uniform1f(GLU.uRelA,1-.65*ss(10,40,view.z));g.uniform1f(GLU.uStyle,mapStyle==='toon'?1:0);g.uniform1f(GLU.uOpen,openRank());g.uniform1f(GLU.uCtry,selected&&selected.kind==='country'?selected.id:0);g.uniform1f(GLU.uLtex,mapStyle==='toon'?1-ss(4.5,8,view.z):1);g.uniform1f(GLU.uCloudA,1-ss(4,9,view.z));g.uniform1f(GLU.uNight,showNight?1-ss(3.5,6.5,view.z):0);g.uniform1f(GLU.uClouds,showClouds?1:0);
+  g.uniform1f(GLU.uMap,mapT(view.z));g.uniform1f(GLU.uSdf,sdfReady&1);g.uniform1f(GLU.uUrb,sdfReady&2?ss(5.5,9,view.z):0);g.uniform1f(GLU.uRelA,1-.65*ss(10,40,view.z));g.uniform1f(GLU.uStyle,mapStyle==='toon'?1:0);g.uniform1f(GLU.uOpen,openRank());g.uniform1f(GLU.uCtry,selected&&selected.kind==='country'?selected.id:0);g.uniform1f(GLU.uLtex,mapStyle==='toon'?1-ss(4.5,8,view.z):1);g.uniform1f(GLU.uCloudA,1-ss(4,9,view.z));g.uniform1f(GLU.uNight,showNight?1-ss(3.5,6.5,view.z):0);g.uniform1f(GLU.uClouds,showClouds?1:0);
   const now=Date.now(),s=sunVec(now);g.uniform3f(GLU.uSun,s[0],s[1],s[2]);g.uniform1f(GLU.uCS,((now/3600000)*1.2%CW)/CW);
   g.drawArrays(g.TRIANGLE_STRIP,0,4);
   if(!GLL)initGLLines();
