@@ -475,6 +475,19 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .replay{position:absolute;right:12px;top:12px;font-size:12px;font-weight:800;color:var(--accent);background:var(--raised);border:2px solid var(--line);border-radius:10px;padding:4px 10px}
 .brand{padding:0 10px 0 4px}
 .bav{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--disp);font-weight:700;font-size:14px;border:2px solid var(--ink);flex:none}
+
+.gp.stat{height:40px;padding:0 12px 0 6px;gap:8px;cursor:pointer}
+.gp.stat .si{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--raised);color:var(--accent);flex:none}
+.gp.stat .si svg{width:16px;height:16px}
+.gp.stat .st{display:flex;flex-direction:column;align-items:flex-start;line-height:15px}
+.gp.stat .st b{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text)}
+.gp.stat .st span{font-family:var(--sans);font-weight:800;font-size:11px;color:var(--muted)}
+.gp.stat.air{background:#ffd23f}
+.gp.stat.air .si{background:#fff3b0;color:var(--ink)}
+.gp.stat.air .si svg{transform:rotate(45deg)}
+.gp.stat.air .st span{color:#7a5b00}
+.gp.stat:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.brand{height:40px}
 </style>
 </head>
 <body>
@@ -2899,17 +2912,18 @@ function tick(){
   document.querySelectorAll('[data-cd]').forEach(el=>{el.textContent=dur(+el.dataset.cd-now)});
   document.querySelectorAll('[data-clock]').forEach(el=>{const a=AP[el.dataset.clock];if(a)el.textContent=hhmm(now,a,el.dataset.sec==='1')});
 }
+// top right: where you are right now. White at an airport, yellow in the air; tap to fly the globe there.
 function updatePills(now){
-  const st=me&&me.at?myState(now):'onboard';let h='';
+  const st=me&&me.at?myState(now):'onboard';let h;
   if(st==='flying'){
-    const b=me.booking,s=flightState(myTpl(b),b.dep,now);
-    h=`<div class="gp">${Math.round(s.gs).toLocaleString('en')} <span class="k">km/h</span></div><div class="gp">${s.alt?Math.round(s.alt).toLocaleString('en'):'0'} <span class="k">ft</span></div>`;
+    const b=me.booking,left=Math.max(0,b.arr-now),eta=left>=HOUR?`${Math.floor(left/HOUR)}h ${pad(Math.floor(left%HOUR/MIN))}m`:`${Math.max(1,Math.ceil(left/MIN))} min`;
+    h=`<button class="gp stat air" data-act="showme" aria-label="Your flight"><span class="si">${ICON.plane}</span><span class="st"><b>${esc(b.id)} · ${b.o}→${b.d}</b><span>ETA ${eta}</span></span></button>`;
   }else{
     const w=me&&me.at?whereIs(me,now):null,loc=w&&w.ap?AP[w.ap]:AP[START];
-    let fly=0;for(const p of players.values())if((whereIs(p,now)||{}).kind==='air')fly++;
-    h=`<div class="gp"><span class="k">${loc.code}</span>${hhmm(now,loc,1)}</div><div class="gp opt"><span class="dot ${solo||!cloudReady?'off':''}"></span>${solo?'Solo':cloudReady?`${players.size} online`:'Connecting'}</div>`;
+    const sub=st==='booked'?`Departs ${hhmm(me.booking.dep,loc)}`:`${hhmm(now,loc,0)} local`;
+    h=`<button class="gp stat" data-act="showme" aria-label="Your location"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><span class="st"><b>${esc(loc.city)}</b><span>${sub}</span></span></button>`;
   }
-  $('pills').innerHTML=h;
+  const el=$('pills');if(el._h!==h){el.innerHTML=h;el._h=h}
 }
 let lastState=null,lastSheet=0;
 setInterval(()=>{
