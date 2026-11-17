@@ -121,7 +121,7 @@ body.collapsed #sheet{transform:translateY(calc(var(--sheetH) - var(--peek) - en
 .list{display:flex;flex-direction:column;gap:8px}
 .fl{background:var(--card);border-radius:16px;padding:16px;border:1px solid var(--line);cursor:pointer;transition:background-color .15s var(--ease)}
 .fl:active{background:var(--raised)}
-.fl.closed{opacity:.5}
+.fl.closed{background:#eef3f9}.fl.closed .fl-h b,.fl.closed .fl-t span,.fl.closed .meta{color:#8ea3bf!important}
 .fl-h{display:flex;align-items:center;gap:12px}
 .fl-h .tx{flex:1;min-width:0}
 .fl-h .meta{font-family:var(--mono);font-size:12px;line-height:16px;color:var(--muted)}
@@ -275,7 +275,7 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 #sheetBody{background:var(--stripes) top/100% calc(env(safe-area-inset-top) + 150px) no-repeat local,var(--bg)}
 .mbox{background:var(--stripes) top/100% calc(env(safe-area-inset-top) + 190px) no-repeat local,var(--bg)}
 #sheetBody>.ph,.mbox>.ph,#sheetBody>.who,#sheetBody>.wordmark{color:#fff;text-shadow:0 2px 0 rgba(10,40,90,.35)}
-#sheetBody>.ph .meta,#sheetBody>.ph .rt span,.mbox>.ph .meta,#sheetBody>.who span{color:rgba(255,255,255,.85);text-shadow:none}
+#sheetBody>.ph .meta,#sheetBody>.ph .rt span,.mbox>.ph .meta,#sheetBody>.who span{color:#e4efff;text-shadow:none}
 #sheetBody>.wordmark svg{color:#fff}
 .pbar{background:transparent;position:static}
 .pbar .back{background:#fff;color:var(--text);border:2px solid var(--ink);box-shadow:0 3px 0 var(--ink);height:38px;border-radius:14px;font-family:var(--disp);font-weight:600}
@@ -335,7 +335,7 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .lvrow{display:flex;align-items:center;gap:14px;margin-bottom:12px}
 .lvbadge{width:60px;height:60px;border-radius:18px;background:var(--stripes);border:2px solid var(--ink);box-shadow:0 3px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;flex:none}
 .lvbadge b{font-family:var(--disp);font-weight:700;font-size:26px;line-height:26px;text-shadow:0 2px 0 rgba(10,40,90,.4)}
-.lvbadge span{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.9}
+.lvbadge span{font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .lvtx b{display:block;font-family:var(--disp);font-weight:600;font-size:20px;color:var(--text)}
 .lvtx span{font-size:13px;color:var(--muted);font-weight:700}
 .xpbar{height:14px;border-radius:8px;background:#d9e8f7;border:2px solid var(--line);overflow:hidden}
@@ -351,7 +351,7 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .lvbig b{font-family:var(--disp);font-weight:700;font-size:64px;line-height:64px;text-shadow:0 3px 0 rgba(10,40,90,.4)}
 @keyframes pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
 
-.fl.locked{opacity:.62}
+.fl.locked{background:#eef3f9}.fl.locked .fl-h b,.fl.locked .fl-t span,.fl.locked .meta{color:#8ea3bf!important}.fl.locked .alogo{filter:grayscale(.7) brightness(1.15)}
 .fl.locked .fl-t .dep{color:var(--muted)}
 .tags .lock,.tr.lk{display:inline-flex;align-items:center;gap:4px;font-weight:800;color:var(--muted);font-size:12px}
 .tags .lock svg,.tr.lk svg,.unl svg{width:14px;height:14px}
@@ -370,7 +370,7 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .alogo{border-radius:30%!important;border:2px solid #26304a;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);overflow:hidden;flex:none}
 .alogo svg{display:block}
 .stampart{display:flex;align-items:center;justify-content:center;aspect-ratio:1;padding:6%}
-.stampart img{width:100%;height:auto;opacity:.92}
+.stampart img{width:100%;height:auto}
 .legend{display:flex;gap:16px;margin-top:12px;font-weight:800;font-size:13px;color:var(--text2)}
 .legend i{display:inline-block;width:16px;height:5px;border-radius:3px;margin-right:6px;vertical-align:2px;box-shadow:0 0 0 1.5px #26304a}
 .legend i.dot{width:10px;height:10px;border-radius:50%}
@@ -449,7 +449,7 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .tkfoot{display:flex;gap:18px;padding:0 18px 14px;align-items:flex-end}.tkfoot span{display:block;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--muted)}.tkfoot b{font-family:var(--disp);font-size:15px;font-weight:600;color:var(--text)}
 .tbars{margin-left:auto;width:70px;height:28px;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 4px,var(--ink) 4px 7px,transparent 7px 9px)}
 .th1{font-family:var(--disp);font-weight:700;font-size:30px;line-height:36px;color:#fff;text-shadow:0 2px 0 rgba(10,40,90,.35)}.th1.c{text-align:center}
-.tsub{color:rgba(255,255,255,.92);font-size:15px;font-weight:600;margin-top:2px}
+.tsub{color:#ffffff;font-size:15px;font-weight:600;margin-top:2px}
 .tlbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
 .tfield{width:100%;height:54px;border-radius:16px;border:2.5px solid var(--accent);background:#fff;padding:0 16px;font-family:var(--disp);font-size:20px;font-weight:600;color:var(--text);outline:none;box-shadow:0 0 0 4px rgba(30,123,230,.15)}
 .tsw{display:flex;gap:10px;flex-wrap:wrap}.tsw button{width:36px;height:36px;border-radius:50%;border:2.5px solid var(--ink)}.tsw button.sel{box-shadow:0 0 0 3px #fff,0 0 0 6px var(--accent)}
@@ -496,7 +496,7 @@ em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;tex
 .vbox{width:18px;height:18px;flex:none;border-radius:6px;border:2px solid #26304a;background:#d5dde8;display:grid;place-items:center;color:#26304a}
 .vbox.on{background:#ffd23f}
 .vbox svg{width:13px;height:13px}
-.fl.locked .vbox{opacity:.6}
+.fl.locked .vbox{background:#e3e9f1;border-color:#8ea3bf}
 </style>
 </head>
 <body>
@@ -2373,7 +2373,7 @@ function drawLabels(z,c,V){
       if(boxes.some(b=>!(bx[2]<b[0]||bx[0]>b[2]||bx[3]<b[1]||bx[1]>b[3])))continue;
       boxes.push(bx);if(++placed>cap)break;
       c.beginPath();c.arc(xy[0],xy[1],2.4,0,7);c.fillStyle='#fff';c.fill();c.lineWidth=1.4;c.strokeStyle='#26304a';c.stroke();c.lineWidth=3.5;
-      c.strokeStyle='rgba(18,40,75,.75)';c.strokeText(p.name,xy[0]+7,xy[1]+4);c.fillStyle='#fff';c.fillText(p.name,xy[0]+7,xy[1]+4);
+      c.strokeStyle='#26304a';c.strokeText(p.name,xy[0]+7,xy[1]+4);c.fillStyle='#fff';c.fillText(p.name,xy[0]+7,xy[1]+4);
     }
   }
 }
@@ -2783,7 +2783,7 @@ function draw(){
     if(ppl)badge(x+7,y-11,ppl);
     let lab=apLabel(a,z,here)||onSel;
     if(lab){ctx.font=`600 14px Fredoka, Nunito, -apple-system, sans-serif`;const lw=a._lw??(a._lw=ctx.measureText(a.city).width),bx=[x-6,y-10,x+14+lw,y+8];if(a.code!==here&&apBoxes.some(b=>!(bx[2]<b[0]||bx[0]>b[2]||bx[3]<b[1]||bx[1]>b[3])))lab=false;else apBoxes.push(bx)}
-    if(lab)apLabelOps.push({bx:[x-8,y-11,x+16+(a._lw||60),y+10],fn:()=>{ctx.font=`${a.code===here?600:500} ${a.tier===1||a.code===here?14:12.5}px Fredoka, Nunito, -apple-system, sans-serif`;ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle='rgba(18,40,75,.72)';ctx.strokeText(a.city,x+11,y+4.6);ctx.fillStyle='#fff';ctx.fillText(a.city,x+11,y+4.6)}});
+    if(lab)apLabelOps.push({bx:[x-8,y-11,x+16+(a._lw||60),y+10],fn:()=>{ctx.font=`${a.code===here?600:500} ${a.tier===1||a.code===here?14:12.5}px Fredoka, Nunito, -apple-system, sans-serif`;ctx.lineJoin='round';ctx.lineWidth=3.5;ctx.strokeStyle='#26304a';ctx.strokeText(a.city,x+11,y+4.6);ctx.fillStyle='#fff';ctx.fillText(a.city,x+11,y+4.6)}});
     hits.push({x,y,r:14,kind:'airport',code:a.code,pri:0,box:lab?[x+6,y-11,x+16+(a._lw||60),y+11]:null});
   }
   // planes
@@ -2840,7 +2840,7 @@ function draw(){
       ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,r,0,7);ctx.fillStyle='#ffd23f';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
       ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,r-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle='#d99a00';ctx.stroke();ctx.globalAlpha=1}
     const pxy=st==='flying'&&onFace(s.lon,s.lat)?proj([s.lon,s.lat]):null;coinFx=coinFx.filter(f=>now-f.t<1400);
-    if(pxy)for(const f of coinFx){const k=(now-f.t)/1400;ctx.globalAlpha=1-k;ctx.font='700 16px Fredoka, Nunito, sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#26304a';
+    if(pxy)for(const f of coinFx){const k=(now-f.t)/1400;ctx.font='700 16px Fredoka, Nunito, sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#26304a';
       ctx.strokeText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.fillStyle='#ffd23f';ctx.fillText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.globalAlpha=1;ctx.textAlign='left'}}
   // airport names sit above the planes so they're never hidden
   const hitsBox=(b)=>avoidBoxes.some(o=>!(b[2]<o[0]||b[0]>o[2]||b[3]<o[1]||b[1]>o[3]));
