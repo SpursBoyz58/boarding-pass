@@ -1095,11 +1095,11 @@ let alertSig='';
 function coinPassTime(b,c){const t=myTpl(b);let lo=b.dep,hi=b.arr;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(flightState(t,b.dep,m).p<c.p)lo=m;else hi=m}return hi}
 function syncCoinAlerts(){
   const N=window.BoardingPassAlerts;if(!N)return;
-  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(','):'none';if(sig===alertSig)return;alertSig=sig;
+  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(',')+'|v2':'none';if(sig===alertSig)return;alertSig=sig;
   try{
     if(!b){N.cancelAll();return}
     const B=AP[b.d],list=coinsFor(b).filter(c=>!b.cc.includes(c.i)).map(c=>({id:fnv(b.key+'a'+c.i)%2000000000,at:Math.round(coinPassTime(b,c)-2*MIN),
-      title:'Coins ahead',body:`${c.v} coins in 2 minutes on ${b.id} to ${B.city}. Open Boarding Pass to fly through them.`}));
+      title:'Coins ahead',body:`${c.v} coins in 2 minutes on ${b.id} to ${B.city}`}));
     N.schedule(JSON.stringify(list));
   }catch(e){}
 }
