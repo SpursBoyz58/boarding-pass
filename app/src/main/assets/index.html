@@ -1090,6 +1090,19 @@ function claimDaily(){
   if(!me||!me.at||readOnly)return;const day=new Date().toISOString().slice(0,10);if(me.daily===day)return;
   const first=!me.daily;save({...me,daily:day,coins:me.coins+(first?0:DAILY),earned:me.earned+(first?0:DAILY)});if(!first)toast(`Daily bonus +${DAILY} coins`);
 }
+// phone alerts (Android app only): 2 minutes before your plane reaches each coin still ahead
+let alertSig='';
+function coinPassTime(b,c){const t=myTpl(b);let lo=b.dep,hi=b.arr;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(flightState(t,b.dep,m).p<c.p)lo=m;else hi=m}return hi}
+function syncCoinAlerts(){
+  const N=window.BoardingPassAlerts;if(!N)return;
+  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(','):'none';if(sig===alertSig)return;alertSig=sig;
+  try{
+    if(!b){N.cancelAll();return}
+    const B=AP[b.d],list=coinsFor(b).filter(c=>!b.cc.includes(c.i)).map(c=>({id:fnv(b.key+'a'+c.i)%2000000000,at:Math.round(coinPassTime(b,c)-2*MIN),
+      title:'Coins ahead',body:`${c.v} coins in 2 minutes on ${b.id} to ${B.city}. Open Boarding Pass to fly through them.`}));
+    N.schedule(JSON.stringify(list));
+  }catch(e){}
+}
 // in-flight pickups: a coin is yours if the app was open as your plane passed it
 let coinSeen=0,coinP=null,coinFx=[];
 function coinTick(now){
@@ -2633,7 +2646,7 @@ setInterval(()=>{
   const now=Date.now();
   updatePills(now);tick();
   if(!cloudReady)return;
-  checkLanding();coinTick(now);if(now%10000<1000)claimDaily();
+  checkLanding();coinTick(now);syncCoinAlerts();if(now%10000<1000)claimDaily();
   const st=myState(now);
   if(st!==lastState){lastState=st;indexPlayers();renderSheet();needsDraw=true;lastSheet=now}
   else if(st!=='onboard'&&now-lastSheet>(st==='flying'?3000:20000)){indexPlayers();renderSheet();lastSheet=now}

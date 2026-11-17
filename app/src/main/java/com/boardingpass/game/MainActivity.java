@@ -1,6 +1,9 @@
 package com.boardingpass.game;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -50,6 +53,12 @@ public class MainActivity extends Activity {
                 return loader.shouldInterceptRequest(request.getUrl());
             }
         });
+
+        // coin alerts: a local notification channel, a bridge the page calls, and (Android 13+) permission to notify
+        Alerts.createChannel(this);
+        web.addJavascriptInterface(new Alerts(this), "BoardingPassAlerts");
+        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
 
         setContentView(web);
         if (savedInstanceState != null) web.restoreState(savedInstanceState);
