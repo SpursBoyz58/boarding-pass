@@ -1378,13 +1378,30 @@ function claimDaily(){
 // phone alerts (Android app only): 2 minutes before your plane reaches each coin still ahead
 let alertSig='';
 function coinPassTime(b,c){const t=myTpl(b);let lo=b.dep,hi=b.arr;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(flightState(t,b.dep,m).p<c.p)lo=m;else hi=m}return hi}
+const COIN_LINES=[
+  ['🪙 Coins incoming!','{v} coins dead ahead. Open up and grab \'em'],
+  ['💰 Shiny thing spotted','{v} coins 2 min out. Don\'t let them fly by'],
+  ['👀 Psst…','{v} coins just over the horizon'],
+  ['🚨 Coin alert!','{v} coins in 2 min. Quick, get the app open'],
+  ['🤑 Payday at 35,000 ft','{v} coins about to float past your window'],
+  ['🎯 Locked on','{v} coins in range in 2 minutes'],
+  ['✈️💨 Full throttle','{v} coins up ahead on the way to {city}'],
+  ['🫳 Hands out the window','{v} coins coming up fast'],
+];
+function coinLine(c,all,avg,city,h){
+  const f=(t)=>t.replace('{v}',c.v.toLocaleString('en')).replace('{city}',city);
+  if(c.i===all[all.length-1].i)return [f('🏁 Last one before {city}'),f('{v} coins, then you land. Make it count')];
+  if(c.v>=avg*1.22)return [f('💎 JACKPOT ahead'),f('A fat {v}-coin stack in 2 min. Do NOT miss this one')];
+  if(c.i===0)return [f('🛫 First coins of the flight'),f('{v} coins up ahead. Ready?')];
+  const l=COIN_LINES[h%COIN_LINES.length];return [f(l[0]),f(l[1])];
+}
 function syncCoinAlerts(){
   const N=window.BoardingPassAlerts;if(!N)return;
-  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(',')+'|v2':'none';if(sig===alertSig)return;alertSig=sig;
+  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(',')+'|v3':'none';if(sig===alertSig)return;alertSig=sig;
   try{
     if(!b){N.cancelAll();return}
-    const B=AP[b.d],list=coinsFor(b).filter(c=>!b.cc.includes(c.i)).map(c=>({id:fnv(b.key+'a'+c.i)%2000000000,at:Math.round(coinPassTime(b,c)-2*MIN),
-      title:'Coins ahead',body:`${c.v} coins in 2 minutes on ${b.id} to ${B.city}`}));
+    const B=AP[b.d],all=coinsFor(b),avg=all.reduce((a,c)=>a+c.v,0)/all.length,list=all.filter(c=>!b.cc.includes(c.i)).map(c=>{
+      const [title,body]=coinLine(c,all,avg,B.city,fnv(b.key+'m'+c.i));return {id:fnv(b.key+'a'+c.i)%2000000000,at:Math.round(coinPassTime(b,c)-2*MIN),title,body}});
     N.schedule(JSON.stringify(list));
   }catch(e){}
 }
