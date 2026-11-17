@@ -503,33 +503,55 @@ em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;tex
 .lcwrap::before{content:'';position:absolute;left:0;right:0;top:0;height:var(--lcBand,58%);background:var(--stripes);background-repeat:no-repeat;background-size:var(--lcW,100%) var(--lcH,150px);background-position:var(--lcX,0) var(--lcY,0)}
 .lcwrap .lclock{position:relative}
 
-.lres{padding:0!important}
-.lres-top{padding:calc(env(safe-area-inset-top) + 48px) 20px 26px;display:flex;flex-direction:column;align-items:center}
-.lroute{color:#fff;font-weight:800;font-size:14px;margin-top:4px;letter-spacing:.02em}
-.lres .tstamp{position:relative;margin-top:18px;max-width:260px}
-.lagain{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.lbody{max-width:460px;margin:0 auto;padding:18px 20px calc(env(safe-area-inset-bottom) + 28px)}
-.lbody .tgains{margin:0 0 12px;max-width:none}
-.lcoins{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:6px;font-size:13px;font-weight:700;color:var(--text2)}
-.lsec{background:#fff;border:2px solid var(--line);border-radius:20px;padding:14px 16px;margin-top:12px;box-shadow:0 4px 0 rgba(23,58,107,.12)}
-.lh{font-family:var(--disp);font-weight:600;font-size:17px;color:var(--text);margin-bottom:10px}
-.litems{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.litem{background:#fff6d6;border:2px solid #f0d36b;border-radius:14px;padding:8px 10px}
-.litem span{display:block;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#8a6a00}
-.litem b{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--text)}
-.lsec .txpl{max-width:none}
-.lsec .unl{margin-top:10px}
-.lnext{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--raised);border:2px solid var(--line);border-radius:16px;padding:10px 12px}
-.lnext:active{transform:translateY(2px)}
-.lnt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
-.lnm{font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}
-.lnt b.dest{display:flex;align-items:center;gap:8px;font-family:var(--disp);font-weight:600;font-size:17px;color:var(--text)}
-.lns{font-size:12.5px;font-weight:700;color:var(--text2)}
-.lnp{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--text)}
-.lbtns{display:flex;gap:10px;margin-top:18px}
-.lbtns .ghost{flex:1;height:52px;background:#fff;color:var(--text)}
-.lbtns .cta{flex:1.3;height:52px;font-size:17px}
 .txpl{gap:10px}.txpl span{white-space:nowrap;display:inline-flex;align-items:center;gap:4px}.txpl svg{width:12px!important;height:12px!important;display:inline-block;flex:none}
+
+.lstep{min-height:100%;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 40px) 24px calc(env(safe-area-inset-bottom) + 60px);text-align:center;cursor:pointer}
+.lstep.stripe{background:var(--stripes)}.lstep.tlight{background:var(--bg)}
+.ldots{position:absolute;top:calc(env(safe-area-inset-top) + 20px);left:0;right:0;display:flex;justify-content:center;gap:6px}
+.ldots b{width:8px;height:8px;border-radius:4px;background:rgba(38,48,74,.25)}.ldots b.done{background:#26304a}.ldots b.on{width:24px;background:#ffd23f;box-shadow:0 0 0 2px #26304a}
+.lkick{font-weight:900;letter-spacing:.18em;font-size:14px;color:#fff;animation:lin .4s var(--ease) both}.lkick.dk{color:var(--muted)}
+.lcity{font-family:var(--disp);font-weight:700;font-size:40px;line-height:46px;color:#fff;text-shadow:0 3px 0 rgba(10,40,90,.35);margin-top:6px;animation:lin .45s .08s var(--ease) both}.lcity.dk{color:var(--text);text-shadow:none}
+.lsub{color:#fff;font-weight:700;font-size:16px;margin-top:10px;animation:lin .45s .16s var(--ease) both}.lsub.dk{color:var(--text2)}
+@keyframes lin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.ltapnote{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 24px);left:0;right:0;font-weight:800;font-size:13px;letter-spacing:.06em;color:#fff;animation:lblink 1.6s 1.2s infinite both}
+.tlight .ltapnote{color:var(--muted)}
+@keyframes lblink{0%,100%{opacity:0}30%,70%{opacity:1}}
+.lstampbox{position:relative;width:280px;height:240px;margin-top:26px;background:#fff;border:3px solid var(--ink);border-radius:28px;box-shadow:0 7px 0 var(--ink);display:flex;align-items:center;justify-content:center;animation:lbox .4s .15s var(--ease) both}
+@keyframes lbox{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+.lstampbox img,.lstampbox>svg,.lstampbox .stampart{width:82%;animation:lslam .45s .55s cubic-bezier(.2,1.7,.4,1) both}
+@keyframes lslam{0%{transform:scale(2.6) rotate(-24deg);opacity:0}60%{opacity:1}100%{transform:scale(1) rotate(-8deg);opacity:1}}
+.lstampbox.new{animation:lbox .4s .15s var(--ease) both,lshake .35s 1s both}
+@keyframes lshake{0%,100%{transform:none}25%{transform:translate(-5px,3px) rotate(-1deg)}50%{transform:translate(4px,-3px) rotate(1deg)}75%{transform:translate(-2px,2px)}}
+.confetti{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+.confetti i{position:absolute;width:10px;height:14px;border:2px solid #26304a;border-radius:3px;animation:lconf 1.3s cubic-bezier(.15,.7,.3,1) both;opacity:0}
+.lstampbox .confetti i{animation-delay:.95s!important}
+@keyframes lconf{0%{transform:translate(0,0) rotate(0) scale(.4);opacity:1}80%{opacity:1}100%{transform:translate(var(--x),calc(var(--y) + 120px)) rotate(var(--r)) scale(1);opacity:0}}
+.lbig{display:flex;gap:14px;width:100%;max-width:400px}
+.lnum{flex:1;background:#fff;border:3px solid var(--ink);border-radius:24px;box-shadow:0 6px 0 var(--ink);padding:18px 8px;animation:lbox .4s var(--ease) both}
+.lnum.cn{animation-delay:.1s}
+.lnum b{display:block;font-family:var(--disp);font-weight:700;font-size:40px;line-height:46px;color:var(--text);font-variant-numeric:tabular-nums}
+.lnum.cn b{color:#d08a00}.lnum span{font-weight:900;letter-spacing:.12em;font-size:13px;color:var(--muted);text-transform:uppercase}
+.llv{display:flex;align-items:center;gap:14px;width:100%;max-width:400px;margin-top:30px;animation:lin .45s .2s var(--ease) both}
+.llvb{width:64px;height:64px;flex:none;border-radius:20px;background:var(--stripes);border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);color:#fff;font-family:var(--disp);font-weight:700;font-size:30px;display:grid;place-items:center;text-shadow:0 2px 0 rgba(10,40,90,.4)}
+.llvb.pop{animation:lpop .5s cubic-bezier(.2,1.8,.4,1)}
+@keyframes lpop{0%{transform:scale(1)}40%{transform:scale(1.45) rotate(-6deg)}100%{transform:scale(1)}}
+.llvt{flex:1;text-align:left}.llvt span{font-family:var(--disp);font-weight:600;font-size:18px;color:var(--text)}
+.xpbar.big{height:20px;margin-top:6px;border-radius:12px}
+.lupslot{position:relative;height:70px;margin-top:26px}
+.lup{font-family:var(--disp);font-weight:700;font-size:30px;color:#ff8a1f;-webkit-text-stroke:1.5px #26304a;animation:lpop .5s cubic-bezier(.2,1.8,.4,1) both}
+.lunlock{width:120px;height:120px;border-radius:36px;background:#fff;border:3px solid var(--ink);box-shadow:0 7px 0 var(--ink);display:grid;place-items:center;margin-top:22px;color:#25a849;animation:lbox .5s .1s cubic-bezier(.2,1.6,.4,1) both}
+.lunlock svg{width:62px;height:62px}
+.lflag{font-size:120px;line-height:140px;margin-top:10px;animation:lslam .5s .15s cubic-bezier(.2,1.6,.4,1) both;filter:drop-shadow(0 6px 0 rgba(10,40,90,.2))}
+.lalogo{margin-top:18px;animation:lslam .5s .15s cubic-bezier(.2,1.6,.4,1) both}.lalogo .alogo{border-width:3px;box-shadow:0 6px 0 #26304a}
+.lnext{display:flex;align-items:center;gap:14px;width:100%;max-width:400px;text-align:left;background:#fff;border:3px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 var(--ink);padding:14px 16px;margin-top:22px;animation:lbox .45s .1s var(--ease) both}
+.lnext:active{transform:translateY(3px);box-shadow:0 3px 0 var(--ink)}
+.lnt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.lnt b.dest{display:flex;align-items:center;gap:8px;font-family:var(--disp);font-weight:600;font-size:22px;color:var(--text)}
+.lns{font-size:14px;font-weight:700;color:var(--text2)}
+.lnp{font-family:var(--disp);font-weight:600;font-size:18px;color:var(--text)}
+.lbtns{display:flex;gap:10px;margin-top:26px;width:100%;max-width:400px}
+.lbtns .ghost{flex:1;height:56px;background:#fff;color:var(--text);font-size:17px}
+.lbtns .cta{flex:1.4;height:56px;font-size:19px}
 </style>
 </head>
 <body>
@@ -1312,6 +1334,7 @@ function tutAction(a,v){
     case 'tut-skip':setTut('done');break;
     case 'tut-done':tutDone();break;
     case 'tut-keep':tutHide();setTab('explore');break;
+    case 'tut-lf-next':if(LF&&LF.i<LF.steps.length-1){LF.i++;landStep()}break;
     case 'tut-land-close':tutHide();setTab('globe');locateMe();break;
     case 'tut-land-board':tutHide();setTab('explore');break;
     case 'tut-land-go':tutHide();setTab('explore');openFlight(v);break;
@@ -1443,52 +1466,84 @@ function showLevelUp(L){
     <button class="cta" data-act="close">Continue</button></div>`;
   $('modal').classList.remove('hidden');
 }
-/* ---------- the landing moment: a results screen after every flight ---------- */
+/* ---------- the landing moment: a short run of reveal screens after every flight ----------
+   stamp slam → rewards counting up → anything newly unlocked → where to next. Tap to move on. */
+let LF=null;
+function confetti(n=46){
+  const cols=['#ffd23f','#ff8a1f','#1e7be6','#25a849','#e0457b','#ffffff'];let h='<div class="confetti">';
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,d=120+Math.random()*220,x=Math.cos(a)*d,y=Math.sin(a)*d-60;
+    h+=`<i style="--x:${x.toFixed(0)}px;--y:${y.toFixed(0)}px;--r:${(Math.random()*720-360).toFixed(0)}deg;background:${cols[i%cols.length]};animation-delay:${(Math.random()*.12).toFixed(2)}s;${i%3?'':'border-radius:50%;'}"></i>`}
+  return h+'</div>';
+}
+function countUp(el,to,ms=900,fmt=v=>v.toLocaleString('en')){
+  const t0=performance.now();const f=t=>{const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);el.textContent='+'+fmt(Math.round(to*e));if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f);
+}
 function nextFlightFor(code,now){
-  // best next hop from here: unlocked, affordable, leaving soon, ideally somewhere new
   let best=null,bs=-1e9;
   for(const d of departures(code,now,24)){
     if(d.dep<now+15*MIN||!zoneOpen(d.t.d))continue;
     const pr=priceFor(d.t,now);if(me.coins<pr.f&&!pr.standby)continue;
-    const wait=(d.dep-now)/HOUR,nw=!me.visited.includes(d.t.d),newZone=!me.visited.some(c=>AP[c].zone===AP[d.t.d].zone),newCountry=!me.visited.some(c=>AP[c].country===AP[d.t.d].country);
-    const sc=(nw?6:0)+(newCountry?3:0)+(newZone?4:0)+(isRare(d.t.d)?1:0)-wait*.9-(d.t.km>6000?1:0);
+    const wait=(d.dep-now)/HOUR,nw=!me.visited.includes(d.t.d),nz=!me.visited.some(c=>AP[c].zone===AP[d.t.d].zone),nc=!me.visited.some(c=>AP[c].country===AP[d.t.d].country);
+    const sc=(nw?6:0)+(nc?3:0)+(nz?4:0)+(isRare(d.t.d)?1:0)-wait*.9;
     if(sc>bs){bs=sc;best=d}
   }
   return best;
 }
 function showLanding(r){
-  const b=r.b,A=AP[b.o],B=AP[b.d],al=AIRLINES[b.al],L=r.after,lvUp=L.lv>r.before.lv,now=Date.now();
-  const st=IMG.stamps&&IMG.stamps[b.d]?`<img src="${IMG.stamps[b.d]}" alt="">`:stampSVG(b.d);
-  const items=[];
-  if(r.isNew)items.push(['Airport',`${B.city} · ${B.code}`]);
-  if(r.newCountry)items.push(['Country',B.country]);
-  if(r.newZone)items.push(['Region',RGN[B.zone].n]);
-  if(r.newAirline)items.push(['Airline',al?al.name:b.al]);
-  if(r.newType)items.push(['Aircraft',b.type]);
-  if(isRare(b.d)&&r.isNew)items.push(['Rare','Hard-to-reach airport']);
-  const coinLines=[[r.caught,'Caught in flight'],[r.refund,'Fare back'],[r.isNew?NEW_AP_BONUS:0,'New airport'],[r.lvBonus,'Level up']].filter(x=>x[0]>0);
-  const unlocked=lvUp?ZONE_LIST.filter(([,z])=>z.lv>r.before.lv&&z.lv<=L.lv).map(([,z])=>z.n):[];
-  const nextZ=ZONE_LIST.find(([,z])=>z.lv>L.lv);
-  const nx=nextFlightFor(b.d,now);
-  let nxHTML='';
-  if(nx){const t=nx.t,D=AP[t.d],pr=priceFor(t,now),nw=!me.visited.includes(t.d);
-    nxHTML=`<div class="lsec"><div class="lh">Recommended next flight</div>
-      <button class="lnext" data-act="tut-land-go" data-v="${nx.key}">${logo(t.al,40)}<span class="lnt"><span class="lnm">${t.id} · ${esc(shortType(t.type))}</span><b class="dest">${visBox(!nw)}${esc(D.city)}</b>
-        <span class="lns">Departs ${hhmm(nx.dep,B)} · ${blkTxt(t.blk)}${nw?' · new airport':''}</span></span><span class="lnp">${pr.standby&&me.coins<pr.f?'Free':coinTag(pr.f)}</span></button></div>`}
-  tutShow(`<div class="tfull tlight lres">
-    <div class="lres-top stripe"><div class="tkick">LANDED · ${esc(b.id)}</div><div class="th1 c">${esc(B.city)}</div><div class="lroute">${A.code} → ${B.code} · ${Math.round(b.km).toLocaleString('en')} km</div>
-      <div class="tstamp">${st}${r.isNew?'':'<span class="lagain">Already in your passport</span>'}</div></div>
-    <div class="lbody">
-      <div class="tgains"><div><b>+${r.gain.toLocaleString('en')}</b><span>XP</span></div><div><b class="cn">+${r.pay.toLocaleString('en')}</b><span>coins</span></div><div><b>${me.visited.length}</b><span>of ${APL.length} airports</span></div></div>
-      ${coinLines.length?`<div class="lcoins">${coinLines.map(([v,l])=>`<span>${coinTag(v)} ${l}</span>`).join('')}</div>`:''}
-      ${items.length?`<div class="lsec"><div class="lh">Newly collected</div><div class="litems">${items.map(([k,v])=>`<div class="litem"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div></div>`:''}
-      <div class="lsec"><div class="lh">${lvUp?`Level up! You're now level ${L.lv}`:`Level ${L.lv} · ${esc(L.title)}`}</div>
-        <div class="xpbar"><i style="width:${(L.cur/L.need*100).toFixed(1)}%"></i></div>
-        <div class="txpl"><span>${L.cur.toLocaleString('en')} / ${L.need.toLocaleString('en')} XP</span>${nextZ?`<span>${ICON_LOCK} ${esc(nextZ[1].n)} at level ${nextZ[1].lv}</span>`:''}</div>
-        ${unlocked.length?`<div class="unl">${esc(unlocked.join(', '))} unlocked</div>`:''}</div>
-      ${nxHTML}
-      <div class="lbtns"><button class="ghost" data-act="tut-land-close">Back to the globe</button>${nx?`<button class="cta" data-act="tut-land-go" data-v="${nx.key}">See next flight</button>`:`<button class="cta" data-act="tut-land-board">Departures</button>`}</div>
-    </div></div>`);
+  const b=r.b,B=AP[b.d],al=AIRLINES[b.al];
+  const steps=['stamp','rewards'];
+  const unl=r.after.lv>r.before.lv?ZONE_LIST.filter(([,z])=>z.lv>r.before.lv&&z.lv<=r.after.lv).map(([,z])=>z):[];
+  for(const z of unl)steps.push({kind:'region',z});
+  if(r.newCountry)steps.push({kind:'country'});
+  if(r.newAirline)steps.push({kind:'airline'});
+  steps.push('next');
+  LF={r,steps,i:0,nx:nextFlightFor(b.d,Date.now())};
+  landStep();
+}
+function landStep(){
+  const {r,steps,i}=LF,b=r.b,B=AP[b.d],s=steps[i],last=i===steps.length-1;
+  const dots=`<div class="ldots">${steps.map((_,k)=>`<b class="${k===i?'on':k<i?'done':''}"></b>`).join('')}</div>`;
+  const tap=`<div class="ltapnote">Tap to continue</div>`;
+  let h='';
+  if(s==='stamp'){
+    const st=IMG.stamps&&IMG.stamps[b.d]?`<img src="${IMG.stamps[b.d]}" alt="">`:stampSVG(b.d);
+    h=`<div class="lstep stripe" data-act="tut-lf-next">${dots}<div class="lkick">${r.isNew?'NEW AIRPORT':'WELCOME BACK'}</div><div class="lcity">${esc(B.city)}</div>
+      <div class="lstampbox ${r.isNew?'new':''}">${st}${r.isNew?confetti():''}</div>${tap}</div>`;
+  }else if(s==='rewards'){
+    const L0=r.before,L1=r.after,up=L1.lv>L0.lv;
+    h=`<div class="lstep tlight" data-act="tut-lf-next">${dots}
+      <div class="lbig"><div class="lnum xp"><b id="lfXp">+0</b><span>XP</span></div><div class="lnum cn"><b id="lfCn">+0</b><span>coins</span></div></div>
+      <div class="llv"><div class="llvb" id="lfLv">${L0.lv}</div><div class="llvt"><span id="lfLvT">Level ${L0.lv}</span><div class="xpbar big"><i id="lfBar" style="width:${(L0.cur/L0.need*100).toFixed(1)}%"></i></div></div></div>
+      <div class="lupslot" id="lfUp"></div>${tap}</div>`;
+  }else if(s.kind==='region'){
+    h=`<div class="lstep stripe" data-act="tut-lf-next">${dots}<div class="lkick">REGION UNLOCKED</div><div class="lunlock">${ICON_LOCK.replace('M8 10.5V8a4 4 0 0 1 8 0v2.5','M8 10.5V8a4 4 0 0 1 7.5-2')}</div><div class="lcity">${esc(s.z.n)}</div><div class="lsub">New destinations are open to you</div>${confetti(60)}${tap}</div>`;
+  }else if(s.kind==='country'){
+    const C=COUNTRIES.find(c=>c[0]===B.country||c[5].includes(b.d));
+    h=`<div class="lstep tlight" data-act="tut-lf-next">${dots}<div class="lkick dk">NEW COUNTRY</div><div class="lflag">${C?flagOf(C[1]):'🏳️'}</div><div class="lcity dk">${esc(C?C[0]:B.country)}</div><div class="lsub dk">Country number ${new Set(me.visited.map(c=>AP[c].country)).size}</div>${tap}</div>`;
+  }else if(s.kind==='airline'){
+    const al=AIRLINES[b.al];
+    h=`<div class="lstep tlight" data-act="tut-lf-next">${dots}<div class="lkick dk">NEW AIRLINE</div><div class="lalogo">${logo(b.al,120)}</div><div class="lcity dk">${esc(al?al.name:b.al)}</div><div class="lsub dk">${me.airlines.length} of ${AIRLINE_LIST.length} airlines flown</div>${tap}</div>`;
+  }else{
+    const nx=LF.nx;let card='';
+    if(nx){const t=nx.t,D=AP[t.d],pr=priceFor(t,Date.now()),nw=!me.visited.includes(t.d);
+      card=`<button class="lnext" data-act="tut-land-go" data-v="${nx.key}">${logo(t.al,48)}<span class="lnt"><b class="dest">${visBox(!nw)}${esc(D.city)}</b><span class="lns">${hhmm(nx.dep,B)} · ${blkTxt(t.blk)}</span></span><span class="lnp">${pr.standby&&me.coins<pr.f?'Free':coinTag(pr.f)}</span></button>`}
+    h=`<div class="lstep tlight">${dots}<div class="lkick dk">WHERE TO NEXT?</div>${card||`<div class="lsub dk">Check the departures board for your next hop</div>`}
+      <div class="lbtns"><button class="ghost" data-act="tut-land-close">Later</button>${nx?`<button class="cta" data-act="tut-land-go" data-v="${nx.key}">Let's go</button>`:`<button class="cta" data-act="tut-land-board">Departures</button>`}</div></div>`;
+  }
+  tutShow(h);
+  if(s==='rewards')animateRewards();
+}
+function animateRewards(){
+  const {r}=LF,L0=r.before,L1=r.after;
+  countUp($('lfXp'),r.gain,1000);countUp($('lfCn'),r.pay,1000);
+  const bar=$('lfBar');let lv=L0.lv;
+  const fillTo=(pct,ms,cb)=>{bar.style.transition=`width ${ms}ms cubic-bezier(.3,.8,.3,1)`;requestAnimationFrame(()=>{bar.style.width=pct+'%'});setTimeout(cb,ms+60)};
+  const step=()=>{
+    if(lv<L1.lv){fillTo(100,600,()=>{lv++;$('lfLv').textContent=lv;$('lfLv').classList.remove('pop');void $('lfLv').offsetWidth;$('lfLv').classList.add('pop');$('lfLvT').textContent=`Level ${lv}`;
+      $('lfUp').innerHTML=`<div class="lup">LEVEL UP!</div>${confetti(50)}`;bar.style.transition='none';bar.style.width='0%';setTimeout(step,450)})}
+    else fillTo((L1.cur/L1.need*100).toFixed(1),700,()=>{});
+  };
+  setTimeout(step,350);
 }
 function checkLanding(){
   if(finalizing||!me||!me.booking||readOnly)return;
