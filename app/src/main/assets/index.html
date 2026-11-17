@@ -1744,7 +1744,8 @@ function planeParts(kind){
   P.wing=[[r,g.yr],[t-2,g.yt],[t,g.yt+3],[t-1,g.yt+g.ct],[r,g.yr+g.cr]];
   const k=(t-5-r)/(t-r);P.tip=[[t-5,g.yr+(g.yt-g.yr)*k],[t-2,g.yt],[t,g.yt+3],[t-1,g.yt+g.ct],[t-5,g.yr+g.cr+(g.yt+g.ct-g.yr-g.cr)*k]];
   const th=g.th;P.tail=[[3.5,31],[th,41],[th+1,45.5],[3.5,43.5]];P.ttip=[[th-3.5,38.8],[th,41],[th+1,45.5],[th-3.5,44.8]];
-  P.engs=g.engs;P.fw=g.fw;P.hump=g.hump;return P;
+  // jet engines hang under the wing: only the intake pokes out ahead of the leading edge
+  P.engs=g.engs.map(e=>({...e,y:g.yr+(g.yt-g.yr)*(e.x-r)/(t-r)+e.ry*.12}));P.fw=g.fw;P.hump=g.hump;return P;
 }
 function fusePath(c,fw){
   c.moveTo(0,-50);c.bezierCurveTo(fw*.7,-50,fw,-43,fw,-34);c.lineTo(fw,26);c.quadraticCurveTo(fw*.9,44,1.6,50);c.lineTo(-1.6,50);
@@ -1771,10 +1772,14 @@ function sprite(kind,al,shadow){
   const [pat,c1,c2]=LIVERY[al]||['tail','#ff9a1f','#ffcf3f'],WH='#ffffff';
   const fus=pat==='body'?c1:WH,wing=pat==='wings'?c1:WH,tail=c1,tip=pat==='tail'||pat==='nose'?c1:c2,eng=pat==='body'||pat==='nose'?c1:pat==='tail'?c1:'#d9dfe6';
   sil();c.lineWidth=8;c.strokeStyle='#26304a';c.stroke();
+  const engines=()=>{c.beginPath();engPath(c,P.engs);c.fillStyle=eng;c.fill();c.lineWidth=2;c.strokeStyle='#26304a';c.stroke()};
+  if(!P.prop)engines(); // jets: engines first, so the wing sits over them
   c.beginPath();mirrorPoly(c,P.wing);c.fillStyle=wing;c.fill();
+  c.beginPath();mirrorPoly(c,P.tip);c.fillStyle=pat==='tail'?c2:tip;c.fill();
+  if(!P.prop){c.beginPath();mirrorPoly(c,P.wing);c.lineWidth=1.6;c.strokeStyle='#26304a';c.stroke()}
   c.beginPath();mirrorPoly(c,P.tail);c.fillStyle=tail;c.fill();
-  c.beginPath();mirrorPoly(c,P.tip);mirrorPoly(c,P.ttip);c.fillStyle=pat==='tail'?c2:tip;c.fill();
-  c.beginPath();engPath(c,P.engs);c.fillStyle=eng;c.fill();c.lineWidth=2;c.strokeStyle='#26304a';c.stroke();
+  c.beginPath();mirrorPoly(c,P.ttip);c.fillStyle=pat==='tail'?c2:tip;c.fill();
+  if(P.prop)engines(); // high-wing turboprops: nacelles sit on top of the wing
   if(P.prop)for(const sx of [1,-1]){const e=P.engs[0];c.beginPath();c.ellipse(e.x*sx,e.y-e.ry-1.5,12,2.2,0,0,Math.PI*2);c.fillStyle='rgba(225,232,240,.9)';c.fill();c.lineWidth=1.4;c.strokeStyle='#26304a';c.stroke()}
   // fuselage with the airline's stripe or nose
   c.save();c.beginPath();fusePath(c,P.fw);c.fillStyle=fus;c.fill();c.clip();
