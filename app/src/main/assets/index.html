@@ -975,6 +975,9 @@ for(const A of AIRLINE_LIST){
     }
   }
 }
+// 5) busy holiday routes the generator undersells. Added last, so no existing flight number shifts.
+for(const [al,a,b] of [['UZ','PER','DPS'],['UZ','SYD','DPS'],['UZ','MEL','DPS'],['UZ','BNE','DPS'],['UZ','DRW','DPS'],
+  ['EQ','KUL','DPS'],['EQ','CGK','DPS'],['HD','HKG','DPS'],['HR','ICN','DPS'],['PD','DOH','DPS']])if(AP[a]&&AP[b])addRoute(al,a,b);
 function pickType(d,ts,h){const b=pickType0(d,ts,h);
   // big hub-to-hub trunk routes get the four-engined giants now and then
   if(ts===2&&d>=6500&&TYPES[b].v===900&&!/ULR|LR/.test(b)){const q=(h>>>7)%5;if(q===0)return 'A380-800';if(q===1&&d>=8000)return '747-8'}
