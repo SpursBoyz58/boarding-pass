@@ -1,0 +1,32 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.jetlag.game'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.jetlag.game'
+        minSdk 26
+        targetSdk 34
+        versionCode (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()
+        versionName "0.1.${System.getenv('GITHUB_RUN_NUMBER') ?: '0'}"
+    }
+
+    buildTypes {
+        debug { minifyEnabled false }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    // the game is one big HTML file; keep it uncompressed so it loads fast
+    androidResources { noCompress 'html' }
+}
+
+dependencies {
+    implementation 'androidx.webkit:webkit:1.11.0'
+}
