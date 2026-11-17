@@ -14,7 +14,9 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
+import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewAssetLoader;
+import androidx.webkit.WebViewFeature;
 import androidx.webkit.WebViewClientCompat;
 
 /** Wraps the Boarding Pass game (assets/index.html) in a full-screen WebView. */
@@ -45,6 +47,11 @@ public class MainActivity extends Activity {
         s.setUseWideViewPort(true);
         s.setSupportZoom(false);
         s.setBuiltInZoomControls(false);
+        // match the browser version exactly: ignore the phone's font-size setting (it was enlarging the whole UI)
+        // and never let Android auto-darken the page
+        s.setTextZoom(100);
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING))
+            WebSettingsCompat.setAlgorithmicDarkeningAllowed(s, false);
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
 
         web.setWebViewClient(new WebViewClientCompat() {
