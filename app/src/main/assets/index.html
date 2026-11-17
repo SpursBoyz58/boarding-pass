@@ -499,8 +499,9 @@ em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;tex
 .fl.locked .vbox{background:#e3e9f1;border-color:#8ea3bf}
 /* the local clock sticks to the top of the departures board, with the striped banner showing behind it */
 .lcwrap{position:sticky;top:-20px;z-index:5;margin:-14px -16px 6px;padding:14px 16px}
-.lcwrap.stuck{background:var(--bg)}
-.lcwrap.stuck::before{content:'';position:absolute;left:0;right:0;top:0;height:58%;background:var(--stripes);background-attachment:fixed;background-size:auto}
+.lcwrap{background:var(--bg)}
+/* the band carries the exact piece of banner behind it, so nothing moves when it starts sticking */
+.lcwrap::before{content:'';position:absolute;left:0;right:0;top:0;height:var(--lcBand,58%);background:var(--stripes);background-repeat:no-repeat;background-size:var(--lcW,100%) var(--lcH,150px);background-position:var(--lcX,0) var(--lcY,0)}
 .lcwrap .lclock{position:relative}
 </style>
 </head>
@@ -1599,9 +1600,18 @@ function applyTab(){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.nav===tab));
   if(!page){needsDraw=true;if(selected)renderCard()}
 }
+function fitClockBand(){
+  const w=body.querySelector('.lcwrap');if(!w)return;
+  const pos=w.style.position;w.style.position='static';
+  const br=body.getBoundingClientRect(),wr=w.getBoundingClientRect(),top=wr.top-br.top+body.scrollTop,left=wr.left-br.left;
+  w.style.position=pos;
+  const bannerH=(parseFloat(getComputedStyle(body).backgroundSize.split(' ')[1])||150);
+  w.style.setProperty('--lcBand',Math.max(0,bannerH-top)+'px');w.style.setProperty('--lcW',body.clientWidth+'px');w.style.setProperty('--lcH',bannerH+'px');w.style.setProperty('--lcY',(-top)+'px');w.style.setProperty('--lcX',(-left)+'px');
+}
+addEventListener('resize',()=>fitClockBand());
 function renderSheet(){
   const k=(cloudReady?myState():'load')+'|'+tab,s=k===sheetKey?body.scrollTop:0;sheetKey=k;
-  body.innerHTML=sheetHTML();body.scrollTop=s;
+  body.innerHTML=sheetHTML();body.scrollTop=s;fitClockBand();
   applyTab();
   {const ba=$('brandAv');if(ba){ba.textContent=me&&me.at?initial(myId):'?';ba.style.background=me&&me.at?colorOf(myId):'#9fb3cc'}}
   {const bv=$('brandLv'),bc=$('brandCoins');if(bv){const ok=me&&me.at;bv.hidden=!ok;bc.hidden=!ok;if(ok){bv.textContent='Lv '+levelOf(xpOf(me)).lv;bc.innerHTML=COIN_SVG+me.coins.toLocaleString('en')}}}
@@ -1853,8 +1863,6 @@ document.addEventListener('click',e=>{
     case 'goto':{closeModal();if(tab!=='globe')setTab('globe');const a=AP[v];centerOn(a.lon,a.lat,Math.max(view.z,minZ*3));selected={kind:'airport',code:v};renderCard();break}
   }
 });
-// the clock band shows its striped backing only once it is stuck at the top
-$('sheetBody').addEventListener('scroll',()=>{const w=document.querySelector('#sheetBody .lcwrap');if(w)w.classList.toggle('stuck',w.getBoundingClientRect().top-$('sheetBody').getBoundingClientRect().top<=parseFloat(getComputedStyle($('sheetBody')).paddingTop)-20+1&&$('sheetBody').scrollTop>4)},{passive:true});
 $('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 $('handle').addEventListener('click',()=>{collapsed=!collapsed;document.body.classList.toggle('collapsed',collapsed);needsDraw=true});
 $('locate').addEventListener('click',locateMe);
