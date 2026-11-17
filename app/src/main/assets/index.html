@@ -3057,6 +3057,16 @@ function draw(){
   const hitsBox=(b)=>avoidBoxes.some(o=>!(b[2]<o[0]||b[0]>o[2]||b[3]<o[1]||b[1]>o[3]));
   for(const op of apLabelOps)if(!hitsBox(op.bx))op.fn();
   if(!routeView)drawZoneBadges();
+  // route picture: a tag off the middle of the line with the flight time
+  if(routeView){const inst=parseKey(routeView);if(inst){const A=AP[inst.t.o],B=AP[inst.t.d],m=slerp(A,B,.5),q0=slerp(A,B,.47),q1=slerp(A,B,.53);
+    if(onFace(m[0],m[1])){const xy=proj(m),p0=proj(q0),p1=proj(q1);let dx=p1[0]-p0[0],dy=p1[1]-p0[1];const dl=Math.hypot(dx,dy)||1;let nx=-dy/dl,ny=dx/dl;
+      if(ny>0||(Math.abs(ny)<.35&&nx<0)){nx=-nx;ny=-ny}
+      const txt=blkTxt(inst.t.blk);ctx.font='700 13.5px Fredoka, Nunito, -apple-system, sans-serif';const tw=ctx.measureText(txt).width+22,th=26;
+      const d=14+Math.abs(nx)*tw/2+Math.abs(ny)*th/2,tx=xy[0]+nx*d,ty=xy[1]+ny*d;
+      ctx.beginPath();ctx.moveTo(xy[0],xy[1]);ctx.lineTo(tx,ty);ctx.lineWidth=2.5;ctx.strokeStyle='#26304a';ctx.stroke();
+      ctx.beginPath();ctx.arc(xy[0],xy[1],4.5,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=2.5;ctx.stroke();
+      rrect(tx-tw/2,ty-th/2,tw,th,th/2);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=2.5;ctx.strokeStyle='#26304a';ctx.stroke();
+      ctx.fillStyle='#26304a';ctx.textAlign='center';ctx.fillText(txt,tx,ty+5);ctx.textAlign='left'}}}
   updateOnline(now);
 }
 let lastDraw=0,wasMoving=false;
