@@ -476,18 +476,18 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .brand{padding:0 10px 0 4px}
 .bav{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--disp);font-weight:700;font-size:14px;border:2px solid var(--ink);flex:none}
 
-.gp.stat{height:40px;padding:0 12px 0 6px;gap:8px;cursor:pointer}
-.gp.stat .si{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--raised);color:var(--accent);flex:none}
-.gp.stat .si svg{width:16px;height:16px}
-.gp.stat .st{display:flex;flex-direction:column;align-items:flex-start;line-height:15px}
+.gp.stat{padding:0 12px 0 5px;gap:7px;cursor:pointer}
+.gp.stat .si{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--raised);color:var(--accent);flex:none}
+.gp.stat .si svg{width:14px;height:14px}
+.gp.stat .st{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
 .gp.stat .st b{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text)}
-.gp.stat .st span{font-family:var(--sans);font-weight:800;font-size:11px;color:var(--muted)}
+.gp.stat .st span{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text)}
 .gp.stat.air{background:#ffd23f}
 .gp.stat.air .si{background:#fff3b0;color:var(--ink)}
 .gp.stat.air .si svg{transform:rotate(45deg)}
-.gp.stat.air .st span{color:#7a5b00}
+.gp.stat .st b{font-family:var(--sans);font-weight:800;font-size:11px;letter-spacing:.04em;color:var(--muted)}
+.gp.stat.air .st b{color:#7a5b00}
 .gp.stat:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
-.brand{height:40px}
 </style>
 </head>
 <body>
@@ -2917,11 +2917,11 @@ function updatePills(now){
   const st=me&&me.at?myState(now):'onboard';let h;
   if(st==='flying'){
     const b=me.booking,left=Math.max(0,b.arr-now),eta=left>=HOUR?`${Math.floor(left/HOUR)}h ${pad(Math.floor(left%HOUR/MIN))}m`:`${Math.max(1,Math.ceil(left/MIN))} min`;
-    h=`<button class="gp stat air" data-act="showme" aria-label="Your flight"><span class="si">${ICON.plane}</span><span class="st"><b>${esc(b.id)} · ${b.o}→${b.d}</b><span>ETA ${eta}</span></span></button>`;
+    h=`<button class="gp stat air" data-act="showme" aria-label="Your flight"><span class="si">${ICON.plane}</span><span class="st"><b>${esc(b.id)}</b><span>ETA ${eta}</span></span></button>`;
   }else{
     const w=me&&me.at?whereIs(me,now):null,loc=w&&w.ap?AP[w.ap]:AP[START];
-    const sub=st==='booked'?`Departs ${hhmm(me.booking.dep,loc)}`:`${hhmm(now,loc,0)} local`;
-    h=`<button class="gp stat" data-act="showme" aria-label="Your location"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><span class="st"><b>${esc(loc.city)}</b><span>${sub}</span></span></button>`;
+    const sub=st==='booked'?`Departs ${hhmm(me.booking.dep,loc)}`:hhmm(now,loc,1);
+    h=`<button class="gp stat" data-act="showme" aria-label="Your location"><span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span><span class="st"><b>${loc.code}</b><span>${sub}</span></span></button>`;
   }
   const el=$('pills');if(el._h!==h){el.innerHTML=h;el._h=h}
 }
