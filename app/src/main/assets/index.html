@@ -417,6 +417,7 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .lct b{font-family:var(--disp);font-weight:600;font-size:30px;line-height:34px;color:var(--text);font-variant-numeric:tabular-nums}
 .lcd{margin-left:auto;text-align:right;display:flex;flex-direction:column}
 .lcd b{font-family:var(--disp);font-weight:600;font-size:15px;color:var(--text)}
+.alrow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .alname{font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text2);line-height:18px}
 </style>
 </head>
@@ -1564,7 +1565,7 @@ function renderCard(){
   if(selected.kind==='plane'){
     const inst=parseKey(selected.key);if(!inst||now>=inst.arr){selected=null;c.classList.add('hidden');return}
     const t=inst.t,s=flightState(t,inst.dep,now),al=AIRLINES[t.al],ids=onFlight.get(selected.key)||[],A=AP[t.o],B=AP[t.d];
-    h=`<div class="ph" style="padding:0">${logo(t.al,36)}<div class="tx"><div class="alname">${esc(al?al.name:'')}</div><div class="meta">${esc(t.id)} · ${esc(shortType(t.type))}</div><h1 style="font-size:17px;line-height:24px;margin-top:2px">${esc(A.city)} to ${esc(B.city)}</h1></div><button class="ibtn" data-act="uncard" aria-label="Close">${ICON.close}</button></div>
+    h=`<div class="ph" style="padding:0">${logo(t.al,36)}<div class="tx"><div class="alrow"><span class="alname">${esc(al?al.name:'')}</span><span class="meta">${esc(t.id)} · ${esc(shortType(t.type))}</span></div><h1 style="font-size:17px;line-height:24px;margin-top:2px">${esc(A.city)} to ${esc(B.city)}</h1></div><button class="ibtn" data-act="uncard" aria-label="Close">${ICON.close}</button></div>
       <div class="route"><div class="e"><span>${hhmm(inst.dep,A)}</span><b>${A.code}</b></div>${track(s.p)}<div class="e r"><span>${hhmm(inst.arr,B)}</span><b>${B.code}</b></div></div>
       <div class="mini"><div>Status<b>${esc(s.phase.replace('Landed · taxiing','Taxiing'))}</b></div><div>Altitude<b>${s.alt?Math.round(s.alt/1000)+',000 ft':'Ground'}</b></div><div>Lands in<b data-cd="${inst.arr}"></b></div></div>
       ${ids.length?`<div style="display:flex;align-items:center;gap:8px;margin-top:12px"><div class="avs">${ids.slice(0,5).map(i=>avatar(i)).join('')}</div><span class="note" style="font-size:13px">${plural(ids.length,'player')} on board</span></div>`:''}
