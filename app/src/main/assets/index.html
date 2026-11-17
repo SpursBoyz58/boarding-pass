@@ -2053,7 +2053,7 @@ function strokeArc(A,B,p0,p1,color,w,dash,doff){
 }
 function drawZoneBadges(){
   if(me&&me.at){const L=myLevel();ctx.font='600 13px Fredoka, Nunito, -apple-system, sans-serif';
-    for(const [,zn] of ZONE_LIST){if(zn.lv<=L||!onFace(zn.at[0],zn.at[1]))continue;const [x,y]=proj(zn.at);const txt=`${zn.n} · Lv ${zn.lv}`,w=ctx.measureText(txt).width+38;
+    for(const [,zn] of ZONE_LIST){if(zn.lv<=L||!onFace(zn.at[0],zn.at[1]))continue;const [x,y]=proj(zn.at);const txt=`${zn.n} · Lv ${zn.lv}`,w=ctx.measureText(txt).width+38;if(avoidBoxes.some(o=>!(x+w/2<o[0]||x-w/2>o[2]||y+15<o[1]||y-15>o[3])))continue;
       rrect(x-w/2,y-15,w,30,15);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
       ctx.save();ctx.translate(x-w/2+11,y-8);ctx.scale(.62,.62);ctx.strokeStyle='#26304a';ctx.lineWidth=2.6;ctx.lineJoin='round';ctx.beginPath();rrect(5,10.5,14,10,2.5);ctx.stroke();ctx.beginPath();ctx.moveTo(8,10.5);ctx.lineTo(8,8);ctx.arc(12,8,4,Math.PI,0);ctx.lineTo(16,10.5);ctx.stroke();ctx.restore();
       ctx.fillStyle='#26304a';ctx.textAlign='left';ctx.fillText(txt,x-w/2+29,y+4.5)}}
@@ -2753,7 +2753,7 @@ function draw(){
   const SUN=sunVec(now);
   if(showNight&&!EARTH)for(const a of APL){const sd=a.v[0]*SUN[0]+a.v[1]*SUN[1]+a.v[2]*SUN[2];if(sd>.04||!onFace(a.lon,a.lat))continue;const [x,y]=proj([a.lon,a.lat]),k=Math.min(1,(.04-sd)/.14),rr=(a.tier===1?16:a.tier===2?11:7)*Math.min(1.6,Math.max(.7,z/4));const gl=ctx.createRadialGradient(x,y,0,x,y,rr);gl.addColorStop(0,`rgba(255,214,140,${.75*k})`);gl.addColorStop(.35,`rgba(255,180,90,${.3*k})`);gl.addColorStop(1,'rgba(255,170,80,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(x,y,rr,0,7);ctx.fill()}
   // airports
-  const apBoxes=[],apLabelOps=[];
+  const apBoxes=[],apLabelOps=[];avoidBoxes=[];
   for(const a of APL){
     const ppl=(atAirport.get(a.code)||[]).filter(i=>i!==myId).length,special=vis.has(a.code)||a.code===here||ppl;
     const onSel=selRoute&&selRoute.includes(a.code);
@@ -2770,7 +2770,7 @@ function draw(){
     if(ppl)badge(x+7,y-11,ppl);
     let lab=apLabel(a,z,here)||onSel;
     if(lab){ctx.font=`600 14px Fredoka, Nunito, -apple-system, sans-serif`;const lw=a._lw??(a._lw=ctx.measureText(a.city).width),bx=[x-6,y-10,x+14+lw,y+8];if(a.code!==here&&apBoxes.some(b=>!(bx[2]<b[0]||bx[0]>b[2]||bx[3]<b[1]||bx[1]>b[3])))lab=false;else apBoxes.push(bx)}
-    if(lab)apLabelOps.push(()=>{ctx.font=`${a.code===here?600:500} ${a.tier===1||a.code===here?14:12.5}px Fredoka, Nunito, -apple-system, sans-serif`;ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle='rgba(18,40,75,.72)';ctx.strokeText(a.city,x+11,y+4.6);ctx.fillStyle='#fff';ctx.fillText(a.city,x+11,y+4.6)});
+    if(lab)apLabelOps.push({bx:[x-8,y-11,x+16+(a._lw||60),y+10],fn:()=>{ctx.font=`${a.code===here?600:500} ${a.tier===1||a.code===here?14:12.5}px Fredoka, Nunito, -apple-system, sans-serif`;ctx.lineJoin='round';ctx.lineWidth=4;ctx.strokeStyle='rgba(18,40,75,.72)';ctx.strokeText(a.city,x+11,y+4.6);ctx.fillStyle='#fff';ctx.fillText(a.city,x+11,y+4.6)}});
     hits.push({x,y,r:14,kind:'airport',code:a.code,pri:0,box:lab?[x+6,y-11,x+16+(a._lw||60),y+11]:null});
   }
   // planes
@@ -2797,6 +2797,7 @@ function draw(){
     const fade=a*ss(0,.1,dp);if(fade<.02)continue;
     const A=AP[f.t.o],B=AP[f.t.d],ang=headingOn(A,B,s.p,xy);
     const ppl=(onFlight.get(f.key)||[]).length,isSel=selected&&selected.key===f.key;
+    if(isSel){const r=PLANE_PX*planeSize(f.t.type)*.85;avoidBoxes.push([xy[0]-r,xy[1]-r,xy[0]+r,xy[1]+r])}
     const kd=planeKind(f.t.type),lift=s.alt?5*Math.min(1,s.alt/30000+.25):0;
     drawJet(xy[0],xy[1],ang,PLANE_PX*planeSize(f.t.type)*(isSel?1.3:s.alt?1:.8),kd,f.t.al,isSel?lift*1.3:lift,(s.alt?1:.8)*fade,ring);
     if(ppl)badge(xy[0]+ps+6,xy[1]-ps-5,ppl);
@@ -2806,9 +2807,9 @@ function draw(){
     const s=flightState(myInst.t,myInst.dep,now);
     if(onFace(s.lon,s.lat)){
       const xy=proj([s.lon,s.lat]),A=AP[myInst.t.o],B=AP[myInst.t.d],ang=headingOn(A,B,s.p,xy),others=(onFlight.get(myInst.key)||[]).length-1;
-      // your plane: a pulsing yellow halo, a yellow outline and a call-sign tag, so it's easy to find
-      const L=PLANE_PX*1.2*planeSize(myInst.t.type),pr=(now%1600)/1600;
-      ctx.beginPath();ctx.arc(xy[0],xy[1],L*.55+pr*L*.6,0,7);ctx.strokeStyle=`rgba(255,210,63,${(.85*(1-pr)).toFixed(3)})`;ctx.lineWidth=2.5;ctx.stroke();
+      // your plane: a yellow outline and a call-sign tag, so it's easy to find
+      const L=PLANE_PX*1.2*planeSize(myInst.t.type);
+      avoidBoxes.push([xy[0]-L*.7,xy[1]-L*.62-28,xy[0]+L*.7,xy[1]+L*.7],[xy[0]-70,xy[1]-L*.62-28,xy[0]+70,xy[1]-L*.62]);
       drawJet(xy[0],xy[1],ang,L,planeKind(myInst.t.type),myInst.t.al,s.alt?6*Math.min(1,s.alt/30000+.25):0,1,'#ffd23f');
       // the tag cycles every 3 s: call sign → route → time to landing (old text slides up and out, new slides in)
       {const b=me.booking,left=Math.max(0,b.arr-now),hm=left>=HOUR?`${Math.floor(left/HOUR)}h ${pad(Math.floor(left%HOUR/MIN))}m`:left>=MIN?`${Math.ceil(left/MIN)} min`:`${Math.ceil(left/1000)}s`;
@@ -2835,7 +2836,8 @@ function draw(){
     if(pxy)for(const f of coinFx){const k=(now-f.t)/1400;ctx.globalAlpha=1-k;ctx.font='700 16px Fredoka, Nunito, sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#26304a';
       ctx.strokeText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.fillStyle='#ffd23f';ctx.fillText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.globalAlpha=1;ctx.textAlign='left'}}
   // airport names sit above the planes so they're never hidden
-  for(const op of apLabelOps)op();
+  const hitsBox=(b)=>avoidBoxes.some(o=>!(b[2]<o[0]||b[0]>o[2]||b[3]<o[1]||b[1]>o[3]));
+  for(const op of apLabelOps)if(!hitsBox(op.bx))op.fn();
   drawZoneBadges();
   updateOnline(now);
 }
@@ -2880,7 +2882,7 @@ function endPtr(e){
 }
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
 cv.addEventListener('wheel',e=>{e.preventDefault();anim=null;view.z=clamp(view.z*Math.exp(-e.deltaY*.0015),minZ,110);needsDraw=true},{passive:false});
-let CTRY=null,selRoute=null;
+let CTRY=null,selRoute=null,avoidBoxes=[];
 (function(){const im=new Image();im.onload=()=>{const w=2048,h=1024,c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d',{willReadFrequently:true});g.imageSmoothingEnabled=false;g.drawImage(im,0,0,w,h);
   const d=g.getImageData(0,0,w,h).data,a=new Uint8Array(w*h);for(let i=0;i<a.length;i++)a[i]=d[i*4];CTRY={w,h,a}};im.src=IMG.ctry})();
 function countryAt(lon,lat){if(!CTRY)return 0;const x=Math.floor((lon+180)/360*CTRY.w)%CTRY.w,y=clamp(Math.floor((90-lat)/180*CTRY.h),0,CTRY.h-1);return CTRY.a[y*CTRY.w+x]}
