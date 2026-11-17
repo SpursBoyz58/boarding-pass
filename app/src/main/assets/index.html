@@ -1781,7 +1781,11 @@ function renderCard(){
       <div class="mini"><div>Status<b>${esc(s.phase.replace('Landed · taxiing','Taxiing'))}</b></div><div>Altitude<b>${s.alt?Math.round(s.alt/1000)+',000 ft':'Ground'}</b></div><div>Lands in<b data-cd="${inst.arr}"></b></div></div>
       ${ids.length?`<div style="display:flex;align-items:center;gap:8px;margin-top:12px"><div class="avs">${ids.slice(0,5).map(i=>avatar(i)).join('')}</div><span class="note" style="font-size:13px">${plural(ids.length,'player')} on board</span></div>`:''}
       <button class="cta" style="height:40px;margin-top:12px;font-size:14px" data-act="flight" data-v="${selected.key}">Flight details</button>`;
-  } else if(selected.kind==='country'){c.classList.add('hidden');return;
+  } else if(selected.kind==='country'){
+    const C=COUNTRIES[selected.id-1];if(!C){selected=null;c.classList.add('hidden');return}
+    const [name,iso,,,zn,aps]=C,Z=RGN[zn],lk=Z&&me&&me.at&&Z.lv>myLevel();
+    h=`<div class="ph" style="padding:0"><span class="cflag" style="font-size:30px">${flagOf(iso)||'🏳️'}</span><div class="tx"><div class="meta">${esc(Z?Z.n:'')}${lk?` · Level ${Z.lv}`:''} · ${plural(aps.length,'airport')}</div><h1 style="font-size:18px;line-height:24px;margin-top:2px">${esc(name)}</h1></div><button class="ibtn" data-act="uncard" aria-label="Close">${ICON.close}</button></div>
+      <button class="cta" style="height:40px;margin-top:12px;font-size:14px" data-act="country" data-v="${selected.id}">Country details</button>`;
   } else {
     const a=AP[selected.code],ids=atAirport.get(a.code)||[],here=me&&(whereIs(me,now)||{}).ap===a.code;
     const deps=departures(a.code,now,24).filter(d=>d.dep>now);
@@ -1805,6 +1809,7 @@ document.addEventListener('click',e=>{
     case 'filter':newOnly=v==='new';renderSheet();break;
     case 'start':tutWelcome();break;
     case 'flight':openFlight(v);break;
+    case 'country':openCountry(+v);break;
     case 'book':book(v);break;
     case 'cancel':cancelBooking();break;
     case 'close':closeModal();break;
@@ -2874,8 +2879,10 @@ function tapAt(x,y){
     // tapped land: show that country
     const ll=proj.invert([x,y]);let id=0;
     if(ll&&isFinite(ll[0])){const v=vec(ll[1],ll[0]),V=vec(view.lat,view.lon);if(v[0]*V[0]+v[1]*V[1]+v[2]*V[2]>0)id=countryAt(ll[0],ll[1])}
-    if(id){selected={kind:'country',id};renderCard();needsDraw=true;openCountry(id);return}
-    if(selected){selected=null;renderCard();needsDraw=true}return}
+    // a tap on empty map first closes whatever is open; a country is highlighted on the first tap, opened on the second
+    if(selected){if(id&&selected.kind==='country'&&selected.id===id){openCountry(id);return}selected=null;renderCard();needsDraw=true;return}
+    if(id){selected={kind:'country',id};renderCard();needsDraw=true}
+    return}
   selected=best.kind==='plane'?{kind:'plane',key:best.key}:{kind:'airport',code:best.code};
   renderCard();needsDraw=true;
   if(best.kind==='plane'){const cb=$('card').getBoundingClientRect();if(best.y<cb.bottom+30){const ll=proj.invert([best.x,best.y]);if(ll)centerOn(ll[0],ll[1],view.z)}}
