@@ -1045,16 +1045,27 @@ const TPL=[], TPL_BY_ID=new Map(), TPL_BY_ORIGIN=new Map();
       const num=counters[ck];counters[ck]+=2;
       for(const dir of [0,1]){
         const o=dir?B:A,de=dir?A:B;
-        const target=n===1?420+Math.floor(hr(r.al+o.code+de.code+'t')*960)
-          :390+i*Math.floor(990/n)+Math.floor((hr(r.al+o.code+de.code+i)-.5)*Math.min(120,990/n))+(dir?55:0);
-        const t={id:r.al+(num+dir),al:r.al,num:num+dir,o:o.code,d:de.code,dep:pickDep(target,blk,o.tz,de.tz),blk,days,type,seats:T.s,km:Math.round(d),alt,wind:(h%81)-40};
+        // airports run 24/7: each route's flights are spaced evenly round the clock from a random start
+        const gap=1440/n,phase=hr(r.al+o.code+de.code+'p')*gap;
+        const target=Math.floor(phase+i*gap+(hr(r.al+o.code+de.code+i)-.5)*Math.min(90,gap*.4));
+        const t={id:r.al+(num+dir),al:r.al,num:num+dir,o:o.code,d:de.code,dep:((Math.round(target/5)*5)%1440+1440)%1440,blk,days,type,seats:T.s,km:Math.round(d),alt,wind:(h%81)-40};
         TPL.push(t);TPL_BY_ID.set(t.id,t);
         if(!TPL_BY_ORIGIN.has(t.o))TPL_BY_ORIGIN.set(t.o,[]);
         TPL_BY_ORIGIN.get(t.o).push(t);
       }
     }
   }
-  for(const list of TPL_BY_ORIGIN.values()) list.sort((a,b)=>a.dep-b.dep);
+  // even out each airport's day: keep the order flights fell in, but space them evenly round the clock
+  for(const [code,list] of TPL_BY_ORIGIN){
+    list.sort((a,b)=>a.dep-b.dep||a.id.localeCompare(b.id));
+    const ph0=hr(code+'ph');
+    // daily flights first, then the few-days-a-week ones slot in between them
+    [list.filter(t=>t.days===127),list.filter(t=>t.days!==127)].forEach((grp,gi)=>{
+      const n=grp.length;if(!n)return;const gap=1440/n,ph=(ph0+gi*.5/Math.max(1,n))*gap;
+      grp.forEach((t,i)=>{const j=(hr(t.id+'j')-.5)*Math.min(30,gap*.5);t.dep=((Math.round((ph+i*gap+j)/5)*5)%1440+1440)%1440});
+    });
+    list.sort((a,b)=>a.dep-b.dep);
+  }
 }
 // weekly departures → rarity
 const WEEKLY={};
@@ -1083,7 +1094,8 @@ const depMs=(t,k)=>{const a=AP[t.o];return k*DAY-tzh(a,k*DAY+12*HOUR-a.tz*HOUR)*
 function utcLabel(a,ms){const o=tzh(a,ms),h=Math.trunc(o),m=Math.round(Math.abs(o-h)*60);return 'UTC'+(o<0?'−':'+')+Math.abs(h)+(m?':'+String(m).padStart(2,'0'):'')}
 const runsOn=(t,k)=>(t.days>>(((k+4)%7+7)%7))&1;
 const instKey=(t,k)=>t.id+'-'+k;
-function parseKey(key){const m=/^([A-Z]{2}\d+)-(\d+)$/.exec(key||'');if(!m)return null;const t=TPL_BY_ID.get(m[1]);if(!t)return null;const k=+m[2];return {t,k,dep:depMs(t,k),arr:depMs(t,k)+t.blk*MIN,key}}
+function parseKey(key){const m=/^([A-Z]{2}\d+)-(\d+)$/.exec(key||'');if(!m)return null;const t=TPL_BY_ID.get(m[1]);if(!t)return null;const k=+m[2],bt=BOOKED_AT.get(key);if(bt)return {t,k,dep:bt[0],arr:bt[1],key};return {t,k,dep:depMs(t,k),arr:depMs(t,k)+t.blk*MIN,key}}
+const BOOKED_AT=new Map();
 function daysText(m){if(m===127)return 'Daily';const n=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];return n.filter((_,i)=>(m>>i)&1).join(' ')}
 
 /* simulated flight physics: taxi → climb → cruise → descent → taxi */
@@ -1153,9 +1165,10 @@ function myState(now=Date.now()){
 // who is on which flight / at which airport (real players, live from the shared store)
 let onFlight=new Map(), atAirport=new Map();
 function indexPlayers(){
-  const now=Date.now();onFlight=new Map();atAirport=new Map();
+  const now=Date.now();onFlight=new Map();atAirport=new Map();BOOKED_AT.clear();
   for(const [id,p] of players){
     const b=p.booking;
+    if(b&&b.key&&!b.tut&&now<b.arr&&b.dep&&b.arr){const t=TPL_BY_ID.get(String(b.key).split('-')[0]),k=+String(b.key).split('-')[1];if(t&&Math.abs(depMs(t,k)-b.dep)>MIN)BOOKED_AT.set(b.key,[b.dep,b.arr])}
     if(b&&now<b.arr){ if(!onFlight.has(b.key))onFlight.set(b.key,[]); onFlight.get(b.key).push(id); }
     const w=whereIs(p,now);
     if(w&&w.kind==='ground'&&w.ap){ if(!atAirport.has(w.ap))atAirport.set(w.ap,[]); atAirport.get(w.ap).push(id); }
@@ -1663,7 +1676,7 @@ function animateRewards(){
   const fillTo=(pct,ms,cb)=>{bar.style.transition=`width ${ms}ms cubic-bezier(.3,.8,.3,1)`;requestAnimationFrame(()=>{bar.style.width=pct+'%'});setTimeout(cb,ms+60)};
   const step=()=>{
     if(!$('lfLv')||!$('lfBar'))return;
-    if(lv<L1.lv){fillTo(100,600,()=>{lv++;$('lfLv').textContent=lv;$('lfLv').classList.remove('pop');void $('lfLv').offsetWidth;$('lfLv').classList.add('pop');$('lfLvT').textContent=`Level ${lv}`;
+    if(lv<L1.lv){fillTo(100,600,()=>{if(!$('lfLv')||!bar.isConnected)return;lv++;$('lfLv').textContent=lv;$('lfLv').classList.remove('pop');void $('lfLv').offsetWidth;$('lfLv').classList.add('pop');$('lfLvT').textContent=`Level ${lv}`;
       $('lfUp').innerHTML=`<div class="lup">LEVEL UP!</div>${confetti(50)}`;bar.style.transition='none';bar.style.width='0%';setTimeout(step,450)})}
     else fillTo((L1.cur/L1.need*100).toFixed(1),700,()=>{});
   };
@@ -1719,6 +1732,8 @@ function recomputeActive(now){
       if(now>=dep&&now<dep+t.blk*MIN)out.push({t,k,dep,key:instKey(t,k)});
     }
   }
+  for(const [key,[dep,arr]] of BOOKED_AT){const i=out.findIndex(f=>f.key===key);if(i>=0)out.splice(i,1);
+    if(now>=dep&&now<arr){const inst=parseKey(key);if(inst)out.push({t:inst.t,k:inst.k,dep,key})}}
   active=out;activeAt=now;
 }
 
