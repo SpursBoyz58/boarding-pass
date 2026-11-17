@@ -76,6 +76,6 @@ public class MainActivity extends Activity {
             "if(m&&!m.classList.contains('hidden')){m.classList.add('hidden');return 'closed'}" +
             "if(document.body.classList.contains('page')&&window.setTab){setTab('globe');return 'closed'}" +
             "return 'none'})()",
-            v -> { if (v == null || v.contains("none")) MainActivity.super.onBackPressed(); });
+            v -> { if (v == null || v.contains("none")) super.onBackPressed(); });
     }
 }
