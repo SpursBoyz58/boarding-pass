@@ -2785,8 +2785,15 @@ function draw(){
     const s=flightState(myInst.t,myInst.dep,now);
     if(onFace(s.lon,s.lat)){
       const xy=proj([s.lon,s.lat]),A=AP[myInst.t.o],B=AP[myInst.t.d],ang=headingOn(A,B,s.p,xy),others=(onFlight.get(myInst.key)||[]).length-1;
-      drawJet(xy[0],xy[1],ang,PLANE_PX*1.2*planeSize(myInst.t.type),planeKind(myInst.t.type),myInst.t.al,s.alt?6*Math.min(1,s.alt/30000+.25):0);
-      if(others>0)badge(xy[0]+ps+8,xy[1]-ps-8,others+1);
+      // your plane: a pulsing yellow halo, a yellow outline and a call-sign tag, so it's easy to find
+      const L=PLANE_PX*1.2*planeSize(myInst.t.type),pr=(now%1600)/1600;
+      ctx.beginPath();ctx.arc(xy[0],xy[1],L*.55+pr*L*.6,0,7);ctx.strokeStyle=`rgba(255,210,63,${(.85*(1-pr)).toFixed(3)})`;ctx.lineWidth=2.5;ctx.stroke();
+      drawJet(xy[0],xy[1],ang,L,planeKind(myInst.t.type),myInst.t.al,s.alt?6*Math.min(1,s.alt/30000+.25):0,1,'#ffd23f');
+      {const cs=me.booking.id,ty=xy[1]-L*.62-14;ctx.font='700 12.5px Fredoka, Nunito, -apple-system, sans-serif';const tw=ctx.measureText(cs).width+18;
+       ctx.beginPath();ctx.moveTo(xy[0]-5,ty+11);ctx.lineTo(xy[0],ty+16);ctx.lineTo(xy[0]+5,ty+11);ctx.closePath();ctx.fillStyle='#26304a';ctx.fill();
+       rrect(xy[0]-tw/2,ty-11,tw,22,11);ctx.fillStyle='#ffd23f';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
+       ctx.fillStyle='#26304a';ctx.textAlign='center';ctx.fillText(cs,xy[0],ty+4.5);ctx.textAlign='left'}
+      if(others>0)badge(xy[0]+L*.55+8,xy[1]-L*.2,others+1);
       hits.push({x:xy[0],y:xy[1],r:20,kind:'plane',key:myInst.key,pri:2});
     }
   }
