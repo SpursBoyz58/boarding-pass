@@ -14,8 +14,22 @@ android {
         versionName "0.1.${System.getenv('GITHUB_RUN_NUMBER') ?: '0'}"
     }
 
+    // one fixed key for every build, so each new APK installs over the last one.
+    // This key is only for test builds; a Play Store release would use a private key kept out of the repo.
+    signingConfigs {
+        test {
+            storeFile file('boardingpass-test.jks')
+            storePassword 'boardingpass'
+            keyAlias 'boardingpass'
+            keyPassword 'boardingpass'
+        }
+    }
+
     buildTypes {
-        debug { minifyEnabled false }
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.test
+        }
     }
 
     compileOptions {
