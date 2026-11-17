@@ -4,10 +4,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="Jetlag"
+        android:label="Boarding Pass"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
-        android:theme="@style/Theme.Jetlag"
+        android:theme="@style/Theme.BoardingPass"
         android:hardwareAccelerated="true"
         android:allowBackup="true">
 

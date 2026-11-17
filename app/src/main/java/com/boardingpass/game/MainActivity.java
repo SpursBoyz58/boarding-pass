@@ -1,4 +1,4 @@
-package com.jetlag.game;
+package com.boardingpass.game;
 
 import android.app.Activity;
 import android.graphics.Color;
@@ -14,7 +14,7 @@ import android.webkit.WebView;
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
 
-/** Wraps the Jetlag game (assets/index.html) in a full-screen WebView. */
+/** Wraps the Boarding Pass game (assets/index.html) in a full-screen WebView. */
 public class MainActivity extends Activity {
     private WebView web;
 

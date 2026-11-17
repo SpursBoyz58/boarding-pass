@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'com.jetlag.game'
+    namespace 'com.boardingpass.game'
     compileSdk 34
 
     defaultConfig {
-        applicationId 'com.jetlag.game'
+        applicationId 'com.boardingpass.game'
         minSdk 26
         targetSdk 34
         versionCode (System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger()

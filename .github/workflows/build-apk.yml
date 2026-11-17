@@ -27,18 +27,18 @@ jobs:
         run: gradle assembleDebug --no-daemon
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/debug/app-debug.apk jetlag-${{ github.run_number }}.apk
+        run: cp app/build/outputs/apk/debug/app-debug.apk boarding-pass-${{ github.run_number }}.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: jetlag-apk
-          path: jetlag-${{ github.run_number }}.apk
+          name: boarding-pass-apk
+          path: boarding-pass-${{ github.run_number }}.apk
 
       # a release per build, so the newest APK is one tap away on your phone
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Jetlag build ${{ github.run_number }}
+          name: Boarding Pass build ${{ github.run_number }}
           body: Debug build of commit ${{ github.sha }}. Download the APK below and open it on your phone to install.
-          files: jetlag-${{ github.run_number }}.apk
+          files: boarding-pass-${{ github.run_number }}.apk
           make_latest: true

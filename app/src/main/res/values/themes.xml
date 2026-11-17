@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Jetlag" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/jetlag_blue</item>
-        <item name="android:statusBarColor">@color/jetlag_blue</item>
-        <item name="android:navigationBarColor">@color/jetlag_blue</item>
+    <style name="Theme.BoardingPass" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bp_blue</item>
+        <item name="android:statusBarColor">@color/bp_blue</item>
+        <item name="android:navigationBarColor">@color/bp_blue</item>
     </style>
-    <color name="jetlag_blue">#1C72DF</color>
-    <color name="jetlag_blue_light">#2A88F0</color>
+    <color name="bp_blue">#1C72DF</color>
+    <color name="bp_blue_light">#2A88F0</color>
 </resources>
