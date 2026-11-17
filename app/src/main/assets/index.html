@@ -2912,7 +2912,7 @@ function drawDetail(z,moving,c,gp){
   c.save();c.lineJoin='round';c.lineCap='round';
   const t=mapT(z);
   if(t>0&&!GL){const rs=visibleLines(DETAIL.land,V,ang);c.globalAlpha=t;c.beginPath();gp(SPHERE);gp({type:'MultiPolygon',coordinates:rs.map(p=>[p])});c.fillStyle='#2f6eab';c.fill('evenodd');c.globalAlpha=1}
-  if(z>=7&&!moving){const ls=visibleLines(DETAIL.urban,V,ang);if(ls.length){c.beginPath();gp({type:'MultiPolygon',coordinates:ls.map(p=>[p])});c.fillStyle='rgba(255,244,228,.16)';c.fill('evenodd');c.strokeStyle='rgba(255,244,228,.28)';c.lineWidth=.6;c.stroke()}}
+  if(false){const ls=visibleLines(DETAIL.urban,V,ang);if(ls.length){c.beginPath();gp({type:'MultiPolygon',coordinates:ls.map(p=>[p])});c.fillStyle='rgba(255,244,228,.16)';c.fill('evenodd');c.strokeStyle='rgba(255,244,228,.28)';c.lineWidth=.6;c.stroke()}}
   if(z>=5){const ls=visibleLines(DETAIL.lakes,V,ang);if(ls.length){c.beginPath();
     // lakes are filled as plain projected rings (only rings fully on the near side), so a clipped ring can never flood the screen
     for(const ring of ls){let ok=true;for(const q of ring){const a=q[1]*rad,o=q[0]*rad,ca=Math.cos(a);if(ca*Math.cos(o)*V[0]+ca*Math.sin(o)*V[1]+Math.sin(a)*V[2]<.02){ok=false;break}}
@@ -3124,7 +3124,7 @@ function loadCtryTex(){const im=new Image();im.onload=()=>{if(!GL)return;const g
   g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_S,g.REPEAT);g.texParameteri(g.TEXTURE_2D,g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE);needsDraw=true};im.src=IMG.ctry}
 function loadSdf(){
   const max=GL.getParameter(GL.MAX_TEXTURE_SIZE);
-  [[6,IMG.land],[7,IMG.urban],[8,IMG.zone]].forEach(([unit,src])=>{
+  [[6,IMG.land],[8,IMG.zone]].forEach(([unit,src])=>{
     const im=new Image();im.onload=()=>{
       if(!GL)return;const g=GL;let srcEl=im;
       if(im.width>max){const c=document.createElement('canvas');c.width=max;c.height=max/2;c.getContext('2d').drawImage(im,0,0,max,max/2);srcEl=c}
@@ -3170,7 +3170,7 @@ function renderGL(){
   const l0=view.lon*rad,p0=view.lat*rad,cl=Math.cos(l0),sl=Math.sin(l0),cp=Math.cos(p0),sp=Math.sin(p0);
   g.uniform3f(GLU.uCv,cp*cl,cp*sl,sp);g.uniform3f(GLU.uEv,-sl,cl,0);g.uniform3f(GLU.uNv,-sp*cl,-sp*sl,cp);
   g.uniform2f(GLU.uC2,W/2*GLDPR,(H-focusY())*GLDPR);g.uniform1f(GLU.uR,R()*GLDPR);g.uniform2f(GLU.uRes,cw,ch);g.uniform1f(GLU.uDpr,GLDPR);
-  g.uniform1f(GLU.uMap,mapT(view.z));g.uniform1f(GLU.uSdf,sdfReady&1);g.uniform1f(GLU.uUrb,sdfReady&2?ss(5.5,9,view.z):0);g.uniform1f(GLU.uRelA,1-.65*ss(10,40,view.z));g.uniform1f(GLU.uStyle,mapStyle==='toon'?1:0);g.uniform1f(GLU.uOpen,openRank());g.uniform1f(GLU.uCtry,selected&&selected.kind==='country'?selected.id:0);g.uniform1f(GLU.uLtex,mapStyle==='toon'?1-ss(4.5,8,view.z):1);g.uniform1f(GLU.uCloudA,1-ss(4,9,view.z));g.uniform1f(GLU.uNight,showNight?1-ss(3.5,6.5,view.z):0);g.uniform1f(GLU.uClouds,showClouds?1:0);
+  g.uniform1f(GLU.uMap,mapT(view.z));g.uniform1f(GLU.uSdf,sdfReady&1);g.uniform1f(GLU.uUrb,0);g.uniform1f(GLU.uRelA,1-.65*ss(10,40,view.z));g.uniform1f(GLU.uStyle,mapStyle==='toon'?1:0);g.uniform1f(GLU.uOpen,openRank());g.uniform1f(GLU.uCtry,selected&&selected.kind==='country'?selected.id:0);g.uniform1f(GLU.uLtex,mapStyle==='toon'?1-ss(4.5,8,view.z):1);g.uniform1f(GLU.uCloudA,1-ss(4,9,view.z));g.uniform1f(GLU.uNight,showNight?1-ss(3.5,6.5,view.z):0);g.uniform1f(GLU.uClouds,showClouds?1:0);
   const now=Date.now(),s=sunVec(now);g.uniform3f(GLU.uSun,s[0],s[1],s[2]);g.uniform1f(GLU.uCS,((now/3600000)*1.2%CW)/CW);
   g.drawArrays(g.TRIANGLE_STRIP,0,4);
   if(!GLL)initGLLines();
@@ -3253,7 +3253,6 @@ function lineStyles(z){
     ['roads',[255,246,214],.4*fz(16),.9+.6*ss(18,40,z),0],
     ['borders',[255,255,255],.28*fz(3),.8+.3*ss(6,20,z),0]];
   return [
-    ['urban',[255,244,228],.26*fz(9),.6,0],
     ['lakes',[190,225,255],(.35+.25*t)*fz(5),.6+.3*t,0],
     ['rivers',t>0?[110,170,235]:[120,185,255],(.65+.25*t)*fz(5),.8+.4*ss(8,14,z),0],
     ['roads',[255,226,186],(.35+.25*t)*fz(10),.8+.4*ss(12,20,z),0],
