@@ -359,12 +359,8 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .tr.lk{background:none!important;height:auto}
 .unl{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:14px;background:#e3f7e8;border:2px solid #9bd8ac;color:#17652f;font-family:var(--disp);font-weight:600;font-size:16px}
 
-.coin{display:inline-flex;align-items:center;gap:3px;font-family:var(--disp);font-weight:600;color:var(--text)}
-.coin svg{width:15px;height:15px;flex:none}
-.cta .coin{color:#fff;font-size:19px}.cta .coin svg{width:20px;height:20px}
 .cbal{display:inline-flex;align-items:center;gap:4px;margin-left:4px;font-family:var(--disp);font-weight:600;font-size:14px;color:var(--text)}
 .cbal svg{width:18px;height:18px}
-.num .coin{font-size:inherit}.num .coin svg{width:18px;height:18px}
 .xpgain.cg{background:#fff8d6;border-color:#f0d36b;color:#7a5b00}
 .coinrow{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 10px}
 .coinrow i{width:18px;height:18px;border-radius:50%;background:#ffd23f;border:2px solid #26304a;box-shadow:inset 0 0 0 2px #fff0a8}
@@ -488,6 +484,13 @@ h1,h2,.h3,.ph h1,.card h2,.hero h1,.who b,.wordmark,.gbox b,.fl-h b,.pcard .nm b
 .gp.stat .st b{font-family:var(--sans);font-weight:800;font-size:11px;letter-spacing:.04em;color:var(--muted)}
 .gp.stat.air .st b{color:#7a5b00}
 .gp.stat:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+/* one coin style everywhere: icon sized to the text, centred on it, same colour and weight as its surroundings */
+em.coin{font:inherit;font-style:normal;color:inherit;white-space:nowrap}
+em.coin svg{width:1.15em;height:1.15em;display:inline-block;vertical-align:-.2em;margin-right:.25em}
+em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;text-transform:none;margin:0;opacity:1}
+.num em.coin{font-family:var(--disp);font-weight:600}
+.cta em.coin{color:#fff}
+.tags em.coin{color:var(--text);font-weight:800}
 </style>
 </head>
 <body>
@@ -1302,7 +1305,7 @@ function coinsFor(b){
 function minFareHere(now){const here=me&&me.at?(whereIs(me,now)||{}).ap:null;if(!here)return 0;let m=Infinity;for(const d of departures(here,now,24))if(d.dep>now+10*MIN&&zoneOpen(d.t.d))m=Math.min(m,fareOf(d.t));return isFinite(m)?m:0}
 function priceFor(t,now=Date.now()){const f=fareOf(t);if(!me||me.coins>=f)return {f,standby:false};const m=minFareHere(now);return {f,standby:me.coins<m&&f===m}}
 const COIN_SVG='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ffd23f" stroke="#26304a" stroke-width="2"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#e0a400" stroke-width="1.8"/><path d="M10.6 9.2h2.4v5.6" stroke="#b07a00" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const coinTag=n=>`<span class="coin">${COIN_SVG}${n.toLocaleString('en')}</span>`;
+const coinTag=n=>`<em class="coin">${COIN_SVG}<span class="cn">${n.toLocaleString('en')}</span></em>`;
 function claimDaily(){
   if(!me||!me.at||readOnly)return;const day=new Date().toISOString().slice(0,10);if(me.daily===day)return;
   const first=!me.daily;save({...me,daily:day,coins:me.coins+(first?0:DAILY),earned:me.earned+(first?0:DAILY)});if(!first)toast(`Daily bonus +${DAILY} coins`);
@@ -1698,7 +1701,7 @@ function passportHTML(now){
       <div class="xpbar"><i style="width:${(L.cur/L.need*100).toFixed(1)}%"></i></div></div>
     <div class="card"><h2>Airports collected</h2>
       <div class="hero-num"><b>${v.length}</b><span>of ${APL.length}</span></div><div class="goal"><i style="width:${(v.length/APL.length*100).toFixed(1)}%"></i></div>
-      <div class="nums">${num('Coins',coinTag(me.coins))}${num('Coins earned',me.earned.toLocaleString('en'))}${num('Flights',me.flights)}${num('Flight time',blkTxt(flightMinutes()))}${num('Distance',Math.round(me.km).toLocaleString('en')+'<small> km</small>')}${num('Countries',countries.size)}${num('Airlines',me.airlines.length+'<small> of '+AIRLINE_LIST.length+'</small>')}${num('Rare airports',rare)}</div></div>
+      <div class="nums">${num('Coins',coinTag(me.coins))}${num('Earned',me.earned.toLocaleString('en'))}${num('Flights',me.flights)}${num('Flight time',blkTxt(flightMinutes()))}${num('Distance',Math.round(me.km).toLocaleString('en')+'<small> km</small>')}${num('Countries',countries.size)}${num('Airlines',me.airlines.length+'<small> of '+AIRLINE_LIST.length+'</small>')}${num('Rare',rare)}</div></div>
     <div class="card" id="stampsCard"><h2>Stamps</h2>
       <div class="stamps">${v.map(c=>`<div class="stamp" data-act="goto" data-v="${c}" title="${esc(AP[c].city)}">${stampSVG(c)}</div>`).join('')}${Array.from({length:3+(3-v.length%3)%3},()=>`<div class="stamp">${blankStamp}</div>`).join('')}</div></div>
     <div class="card"><h2>Regions</h2><div class="sub">By region</div><div class="bars">`;
