@@ -1378,30 +1378,44 @@ function claimDaily(){
 // phone alerts (Android app only): 2 minutes before your plane reaches each coin still ahead
 let alertSig='';
 function coinPassTime(b,c){const t=myTpl(b);let lo=b.dep,hi=b.arr;for(let k=0;k<40;k++){const m=(lo+hi)/2;if(flightState(t,b.dep,m).p<c.p)lo=m;else hi=m}return hi}
-const COIN_LINES=[
-  ['🪙 Coins incoming!','{v} coins dead ahead. Open up and grab \'em'],
-  ['💰 Shiny thing spotted','{v} coins 2 min out. Don\'t let them fly by'],
-  ['👀 Psst…','{v} coins just over the horizon'],
-  ['🚨 Coin alert!','{v} coins in 2 min. Quick, get the app open'],
-  ['🤑 Payday at 35,000 ft','{v} coins about to float past your window'],
-  ['🎯 Locked on','{v} coins in range in 2 minutes'],
-  ['✈️💨 Full throttle','{v} coins up ahead on the way to {city}'],
-  ['🫳 Hands out the window','{v} coins coming up fast'],
-];
-function coinLine(c,all,avg,city,h){
-  const f=(t)=>t.replace('{v}',c.v.toLocaleString('en')).replace('{city}',city);
-  if(c.i===all[all.length-1].i)return [f('🏁 Last one before {city}'),f('{v} coins, then you land. Make it count')];
-  if(c.v>=avg*1.22)return [f('💎 JACKPOT ahead'),f('A fat {v}-coin stack in 2 min. Do NOT miss this one')];
-  if(c.i===0)return [f('🛫 First coins of the flight'),f('{v} coins up ahead. Ready?')];
-  const l=COIN_LINES[h%COIN_LINES.length];return [f(l[0]),f(l[1])];
+// where a coin sits, in words: the country below it, or roughly which sea
+function seaAt(lon,lat){
+  if(lat>66)return 'the Arctic';if(lat<-55)return 'the Southern Ocean';
+  if(lon>=147&&lon<=175&&lat<-28&&lat>-50)return 'the Tasman Sea';
+  if(lon>=114&&lon<=146&&lat<-31&&lat>-45)return 'the Great Australian Bight';
+  if(lon>=142&&lon<=165&&lat<-9&&lat>=-28)return 'the Coral Sea';
+  if(lon>=105&&lon<=121&&lat>0&&lat<23)return 'the South China Sea';
+  if(lon>=27.5&&lon<=42&&lat>40.9&&lat<47)return 'the Black Sea';
+  if(lon>=-6&&lon<=36&&lat>30&&lat<46)return 'the Mediterranean';
+  if(lon>=-98&&lon<=-80&&lat>18&&lat<31)return 'the Gulf of Mexico';
+  if(lon>=-88&&lon<=-60&&lat>9&&lat<=22)return 'the Caribbean';
+  if(lon>=-5&&lon<=10&&lat>51&&lat<61)return 'the North Sea';
+  if(lon>=20&&lon<=120&&lat<=25)return 'the Indian Ocean';
+  if(lon>-70&&lon<20)return lat>0?'the North Atlantic':'the South Atlantic';
+  return lat>0?'the North Pacific':'the South Pacific';
+}
+function coinWhere(b,c){
+  const s=flightState(myTpl(b),b.dep,coinPassTime(b,c)),id=countryAt(s.lon,s.lat),C=id&&COUNTRIES[id-1];
+  if(!C)return 'over '+seaAt(s.lon,s.lat);
+  // over land: name a nearby city if there is one (not the airports you're flying between), else the country
+  const v=vec(s.lat,s.lon);let best=null,bd=-1;
+  for(const k in AP){if(k===b.o||k===b.d)continue;const a=AP[k],w=vec(a.lat,a.lon),d=v[0]*w[0]+v[1]*w[1]+v[2]*w[2];if(d>bd){bd=d;best=a}}
+  return best&&Math.acos(Math.min(1,bd))*6371<350?'near '+best.city:'over '+C[0];
+}
+function coinLine(b,c,all){
+  const top=all.reduce((m,x)=>x.v>m.v?x:m,all[0]),last=c.i===all[all.length-1].i;
+  const title=`🪙 ${c.v.toLocaleString('en')} coins ${coinWhere(b,c)}`;
+  const body=c.i===top.i?'Biggest drop this flight. 2 min out.':last?'Last drop before you land. 2 min out.':c.i===0?'First drop of the flight. 2 min out.':
+    ['2 min out. Have the app open to grab them.','Passing in 2 min.','2 min out. Keep the app open.'][fnv(b.key+'m'+c.i)%3];
+  return [title,body];
 }
 function syncCoinAlerts(){
   const N=window.BoardingPassAlerts;if(!N)return;
-  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(',')+'|v3':'none';if(sig===alertSig)return;alertSig=sig;
+  const b=me&&me.booking,sig=b?b.key+'|'+b.cc.join(',')+'|v4'+(CTRY?'c':''):'none';if(sig===alertSig)return;alertSig=sig;
   try{
     if(!b){N.cancelAll();return}
-    const B=AP[b.d],all=coinsFor(b),avg=all.reduce((a,c)=>a+c.v,0)/all.length,list=all.filter(c=>!b.cc.includes(c.i)).map(c=>{
-      const [title,body]=coinLine(c,all,avg,B.city,fnv(b.key+'m'+c.i));return {id:fnv(b.key+'a'+c.i)%2000000000,at:Math.round(coinPassTime(b,c)-2*MIN),title,body}});
+    const all=coinsFor(b),list=all.filter(c=>!b.cc.includes(c.i)).map(c=>{
+      const [title,body]=coinLine(b,c,all);return {id:fnv(b.key+'a'+c.i)%2000000000,at:Math.round(coinPassTime(b,c)-2*MIN),title,body}});
     N.schedule(JSON.stringify(list));
   }catch(e){}
 }
