@@ -3375,6 +3375,23 @@ function draw(){
     if(lab)apLabelOps.push({bx:[x-8,y-11,x+16+(a._lw||60),y+10],fn:()=>{ctx.font=`${a.code===here?600:500} ${a.tier===1||a.code===here?14:12.5}px Fredoka, Nunito, -apple-system, sans-serif`;ctx.lineJoin='round';ctx.lineWidth=3.5;ctx.strokeStyle='#26304a';ctx.strokeText(a.city,x+11,y+4.6);ctx.fillStyle='#fff';ctx.fillText(a.city,x+11,y+4.6)}});
     hits.push({x,y,r:14,kind:'airport',code:a.code,pri:0,box:lab?[x+6,y-11,x+16+(a._lw||60),y+11]:null});
   }
+  // coins waiting along my route (drawn first, so planes sit on top of them)
+  if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?flightState(myInst.t,b.dep,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
+    const ca=me.booking.tut?1:ss(35,55,z);
+    const coinAt=(c,col,ring,rr,alpha)=>{const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))return null;const xy=proj(q);if(xy[0]<-12||xy[0]>W+12||xy[1]<-12||xy[1]>H+12)return null;
+      const bob=Math.sin(now/300+c.i)*1.5;ctx.globalAlpha=alpha;ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr,0,7);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
+      ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle=ring;ctx.stroke();
+      if(c.rare){ctx.fillStyle='#fff';ctx.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4,l=k%2?2:5.5;ctx.lineTo(xy[0]+Math.cos(a)*l,xy[1]+bob+Math.sin(a)*l)}ctx.closePath();ctx.fill()}
+      ctx.globalAlpha=1;return xy};
+    for(const d of dropsOf(b)){
+      if(d.coins.every(c=>b.cc.includes(c.i)))continue;
+      if(d.sp){ // special: always on the map, glowing, until its window closes
+        const w=spWindow(b,d);if(now>w[1])continue;const mid=d.coins[d.coins.length>>1],q=pt(A,B,mid.p);
+        if(onFace(q[0],q[1])){const xy=proj(q),pr=(now%1600)/1600;ctx.beginPath();ctx.arc(xy[0],xy[1],12+pr*16,0,7);ctx.strokeStyle=`rgba(47,143,240,${(.7*(1-pr)).toFixed(3)})`;ctx.lineWidth=3;ctx.stroke()}
+        for(const c of d.coins)if(!b.cc.includes(c.i))coinAt(c,'#2f8ff0','#bfe0ff',8,1);
+      }else if(ca>.02)for(const c of d.coins){if(c.p<=s.p||b.cc.includes(c.i))continue;coinAt(c,'#ffd23f','#d99a00',c.rare?9:7,ca)}
+    }
+  }
   // planes
   const ps=PLANE_PX/2.4,Vw=vec(view.lat,view.lon);
   // long-haul flights show from far out; shorter ones join as you zoom in (each fades in at its own zoom).
@@ -3422,22 +3439,8 @@ function draw(){
       hits.push({x:xy[0],y:xy[1],r:20,kind:'plane',key:myInst.key,pri:2});
     }
   }
-  // coins waiting along my route, and a little pop when one is caught
+  // a little pop when a coin is caught
   if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?flightState(myInst.t,b.dep,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
-    const ca=me.booking.tut?1:ss(35,55,z);
-    const coinAt=(c,col,ring,rr,alpha)=>{const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))return null;const xy=proj(q);if(xy[0]<-12||xy[0]>W+12||xy[1]<-12||xy[1]>H+12)return null;
-      const bob=Math.sin(now/300+c.i)*1.5;ctx.globalAlpha=alpha;ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr,0,7);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
-      ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle=ring;ctx.stroke();
-      if(c.rare){ctx.fillStyle='#fff';ctx.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4,l=k%2?2:5.5;ctx.lineTo(xy[0]+Math.cos(a)*l,xy[1]+bob+Math.sin(a)*l)}ctx.closePath();ctx.fill()}
-      ctx.globalAlpha=1;return xy};
-    for(const d of dropsOf(b)){
-      if(d.coins.every(c=>b.cc.includes(c.i)))continue;
-      if(d.sp){ // special: always on the map, glowing, until its window closes
-        const w=spWindow(b,d);if(now>w[1])continue;const mid=d.coins[d.coins.length>>1],q=pt(A,B,mid.p);
-        if(onFace(q[0],q[1])){const xy=proj(q),pr=(now%1600)/1600;ctx.beginPath();ctx.arc(xy[0],xy[1],12+pr*16,0,7);ctx.strokeStyle=`rgba(47,143,240,${(.7*(1-pr)).toFixed(3)})`;ctx.lineWidth=3;ctx.stroke()}
-        for(const c of d.coins)if(!b.cc.includes(c.i))coinAt(c,'#2f8ff0','#bfe0ff',8,1);
-      }else if(ca>.02)for(const c of d.coins){if(c.p<=s.p||b.cc.includes(c.i))continue;coinAt(c,'#ffd23f','#d99a00',c.rare?9:7,ca)}
-    }
     const pxy=st==='flying'&&onFace(s.lon,s.lat)?proj([s.lon,s.lat]):null;coinFx=coinFx.filter(f=>now-f.t<1400);
     if(pxy)for(const f of coinFx){const k=(now-f.t)/1400;ctx.font='700 16px Fredoka, Nunito, sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#26304a';
       ctx.strokeText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.fillStyle='#ffd23f';ctx.fillText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.globalAlpha=1;ctx.textAlign='left'}}
