@@ -492,6 +492,11 @@ em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;tex
 .cta em.coin{color:#fff}
 .tags em.coin{color:var(--text);font-weight:800}
 .ftabs button{display:inline-flex;align-items:center;gap:5px}.ftabs svg{width:13px;height:13px}
+.fl-h .tx b.dest{display:flex;align-items:center;gap:8px}
+.vbox{width:18px;height:18px;flex:none;border-radius:6px;border:2px solid #26304a;background:#d5dde8;display:grid;place-items:center;color:#26304a}
+.vbox.on{background:#ffd23f}
+.vbox svg{width:13px;height:13px}
+.fl.locked .vbox{opacity:.6}
 </style>
 </head>
 <body>
@@ -1640,12 +1645,14 @@ function airportHTML(now){
   return h+'<div class="list">'+deps.slice(0,60).map(d=>flightRow(d,now,a)).join('')+'</div>';
 }
 const ICON_LOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
+// collected or not, in the map's airport-pad colours: yellow with a tick once visited, grey until then
+const visBox=v=>`<i class="vbox ${v?'on':''}" aria-label="${v?'Visited':'Not visited yet'}">${v?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 12.5l4 4L18.5 7.5"/></svg>':''}</i>`;
 function flightRow(d,now,a){
   const t=d.t,B=AP[t.d],[s,cls]=statusOf(d.dep,now),closed=d.dep<now+10*MIN,tag=dayTag(d.dep,a,now),n=(onFlight.get(d.key)||[]).length;
   const lockZ=zoneOpen(t.d)?null:RGN[B.zone];
-  const tags=lockZ?`<span class="lock">${ICON_LOCK}Lv ${lockZ.lv}</span>`:[coinTag(fareOf(t)),!me.visited.includes(t.d)?'<span class="new">New airport</span>':'',isRare(t.d)?'Rare':'',n?plural(n,'player'):''].filter(Boolean).join(' · ');
+  const tags=lockZ?`<span class="lock">${ICON_LOCK}Lv ${lockZ.lv}</span>`:[coinTag(fareOf(t)),isRare(t.d)?'Rare':'',n?plural(n,'player'):''].filter(Boolean).join(' · ');
   return `<div class="fl ${closed?'closed':''} ${lockZ?'locked':''}" data-act="flight" data-v="${d.key}">
-    <div class="fl-h">${logo(t.al,36)}<div class="tx"><div class="meta">${t.id} · ${esc(shortType(t.type))}</div><b>${esc(B.city)}</b></div><div class="tags">${tags}</div></div>
+    <div class="fl-h">${logo(t.al,36)}<div class="tx"><div class="meta">${t.id} · ${esc(shortType(t.type))}</div><b class="dest">${visBox(me.visited.includes(t.d))}${esc(B.city)}</b></div><div class="tags">${tags}</div></div>
     <div class="fl-t"><span class="dep">${hhmm(d.dep,a)}</span><span class="arr">${hhmm(d.arr,B)} ${B.code}</span><span class="dur">${blkTxt(t.blk)}${tag?' · '+tag:''}</span>${status(s,cls)}</div></div>`;
 }
 function myTpl(b){if(b.tut){const r=TPL_BY_ID.get(b.id),blk=r?r.blk:90;return {o:b.o,d:b.d,blk,speed:blk*MIN/(b.arr-b.dep),type:b.type,alt:r?r.alt:31000,wind:0,al:b.al}}return TPL_BY_ID.get(b.id)||{o:b.o,d:b.d,blk:Math.round((b.arr-b.dep)/MIN),type:b.type,alt:35000,wind:0}}
