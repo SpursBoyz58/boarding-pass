@@ -499,7 +499,9 @@ em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;tex
 .fl.locked .vbox{background:#e3e9f1;border-color:#8ea3bf}
 /* the local clock sticks to the top of the departures board, with the striped banner showing behind it */
 .lcwrap{position:sticky;top:-20px;z-index:5;margin:-14px -16px 6px;padding:14px 16px}
-.lcwrap.stuck{background:var(--stripes);background-attachment:fixed;background-size:auto;box-shadow:0 2px 0 rgba(23,58,107,.12)}
+.lcwrap.stuck{background:var(--bg)}
+.lcwrap.stuck::before{content:'';position:absolute;left:0;right:0;top:0;height:58%;background:var(--stripes);background-attachment:fixed;background-size:auto}
+.lcwrap .lclock{position:relative}
 </style>
 </head>
 <body>
