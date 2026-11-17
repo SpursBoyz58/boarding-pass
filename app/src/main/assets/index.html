@@ -491,6 +491,7 @@ em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;tex
 .num em.coin{font-family:var(--disp);font-weight:600}
 .cta em.coin{color:#fff}
 .tags em.coin{color:var(--text);font-weight:800}
+.ftabs button{display:inline-flex;align-items:center;gap:5px}.ftabs svg{width:13px;height:13px}
 </style>
 </head>
 <body>
@@ -1031,7 +1032,7 @@ let me=null;                    // my player doc
 let players=new Map();          // id -> clean player doc
 let names={};                   // id -> display name
 let mapStyle=(()=>{try{return localStorage.getItem('jetlag-style')||'toon'}catch(e){return 'toon'}})();
-let tab='globe', newOnly=false, collapsed=false, follow=true, selected=null, finalizing=false;
+let tab='globe', newOnly=false, openOnly=(()=>{try{return localStorage.getItem('bp-open-only')==='1'}catch(e){return false}})(), collapsed=false, follow=true, selected=null, finalizing=false;
 
 function cleanPlayer(d){
   if(!d||typeof d!=='object')return null;
@@ -1629,11 +1630,13 @@ function airportHTML(now){
     <div class="lclock"><span class="lci">${day?'☀️':'🌙'}</span><div class="lct"><span>Local time</span><b>${liveClock(a,1)}</b></div><div class="lcd"><b>${dateLbl(now,a)}</b><span>${utcLabel(a,now)}</span></div></div>`;
   h+=notice();
   if(others.length) h+=`<div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px"><div class="avs">${others.slice(0,5).map(i=>avatar(i)).join('')}</div><div class="note" style="font-size:13px;line-height:20px">${others.slice(0,3).map(i=>esc(nameOf(i))).join(', ')}${others.length>3?` and ${others.length-3} more`:''} ${others.length>1?'are':'is'} here too</div></div>`;
-  h+=`<div class="tabs"><button class="${newOnly?'':'on'}" data-act="filter" data-v="all">Departures</button><button class="${newOnly?'on':''}" data-act="filter" data-v="new">New airports only</button></div>`;
+  const tick='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  h+=`<div class="tabs ftabs"><button class="${!newOnly&&!openOnly?'on':''}" data-act="filter" data-v="all">All</button><button class="${openOnly?'on':''}" data-act="filter" data-v="open">${openOnly?tick:''}Unlocked</button><button class="${newOnly?'on':''}" data-act="filter" data-v="new">${newOnly?tick:''}New airports</button></div>`;
   let deps=departures(code,now,24);
   if(deps.filter(d=>d.dep>now+10*MIN).length<4) deps=departures(code,now,96);
   if(newOnly) deps=deps.filter(d=>!me.visited.includes(d.t.d));
-  if(!deps.length) return h+`<div class="empty">No departures in the next day</div>`;
+  if(openOnly) deps=deps.filter(d=>zoneOpen(d.t.d));
+  if(!deps.length) return h+`<div class="empty">${newOnly||openOnly?'No flights match these filters in the next day':'No departures in the next day'}</div>`;
   return h+'<div class="list">'+deps.slice(0,60).map(d=>flightRow(d,now,a)).join('')+'</div>';
 }
 const ICON_LOCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></svg>';
@@ -1825,7 +1828,7 @@ document.addEventListener('click',e=>{
   const v=el.dataset.v;
   if(el.dataset.act.startsWith('tut-')&&tutAction(el.dataset.act,v))return;
   switch(el.dataset.act){
-    case 'filter':newOnly=v==='new';renderSheet();break;
+    case 'filter':if(v==='all'){newOnly=false;openOnly=false}else if(v==='new')newOnly=!newOnly;else openOnly=!openOnly;try{localStorage.setItem('bp-open-only',openOnly?'1':'0')}catch(e){}renderSheet();break;
     case 'start':tutWelcome();break;
     case 'flight':openFlight(v);break;
     case 'country':openCountry(+v);break;
