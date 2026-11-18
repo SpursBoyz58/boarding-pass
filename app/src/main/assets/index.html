@@ -2434,8 +2434,8 @@ const COIN_Z0=35,COIN_Z1=55; // coins fade in between these zooms
 function locateMe(){
   if(!me||!me.at){const a=AP[START];centerOn(a.lon,a.lat,minZ*1.5);return}
   const now=Date.now(),w=whereIs(me,now);
-  if(w.kind==='air'){follow=true;const s=flightState(myTpl(me.booking),me.booking.dep,now);centerOn(s.lon,s.lat,me.booking.tut?Math.max(view.z,minZ*2):COIN_Z1);renderSheet()}
-  else{const a=AP[w.ap];centerOn(a.lon,a.lat,Math.max(view.z,minZ*2))}
+  if(w.kind==='air'){follow=true;const s=flightState(myTpl(me.booking),me.booking.dep,now);centerOn(s.lon,s.lat,me.booking.tut?Math.max(view.z,minZ*2):COIN_Z1,true);renderSheet()}
+  else{const a=AP[w.ap];centerOn(a.lon,a.lat,Math.max(view.z,minZ*2),true)}
 }
 let toastT=null;
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),3600)}
@@ -2457,16 +2457,20 @@ function focusY(){return (64+H-80)/2}
 function syncProj(){calcMinZ();if(view.z<minZ&&!anim)view.z=minZ;proj.rotate([-view.lon,-view.lat]).scale(R()).translate([W/2,focusY()])}
 function clampView(){view.lat=clamp(view.lat,-80,80);view.lon=((view.lon+180)%360+360)%360-180}
 let anim=null;
-function centerOn(lon,lat,z){ // smooth fly-to
+function centerOn(lon,lat,z,seq){ // smooth fly-to; seq: turn the globe first, then zoom
   const from={lon:view.lon,lat:view.lat,z:view.z},to={lon,lat:clamp(lat,-80,80),z:z?clamp(z,minZ,300):view.z};
   let dl=to.lon-from.lon;while(dl>180)dl-=360;while(dl<-180)dl+=360;
-  anim={t0:performance.now(),dur:900,from,dl,to};inertia=null;needsDraw=true;
+  if(!seq){anim={t0:performance.now(),dur:900,from,dl,to};inertia=null;needsDraw=true;return}
+  const ang=d3.geoDistance([from.lon,from.lat],[to.lon,to.lat]),zr=Math.abs(Math.log(to.z/from.z));
+  const pan={t0:performance.now(),dur:ang<.002?0:clamp(700+1100*ang/Math.PI,700,1700),from,dl,to:{lon:to.lon,lat:to.lat,z:from.z}};
+  pan.next={dur:zr<.01?0:clamp(650+420*zr,650,1600),from:{lon:to.lon,lat:to.lat,z:from.z},dl:0,to};
+  anim=pan;inertia=null;needsDraw=true;
 }
 function stepAnim(){
-  if(!anim)return;const k=clamp((performance.now()-anim.t0)/anim.dur,0,1),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+  if(!anim)return;const k=anim.dur>0?clamp((performance.now()-anim.t0)/anim.dur,0,1):1,e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
   view.lon=anim.from.lon+anim.dl*e;view.lat=anim.from.lat+(anim.to.lat-anim.from.lat)*e;
   view.z=Math.exp(Math.log(anim.from.z)+(Math.log(anim.to.z)-Math.log(anim.from.z))*e);
-  clampView();needsDraw=true;if(k>=1)anim=null;
+  clampView();needsDraw=true;if(k>=1)anim=anim.next?{...anim.next,t0:performance.now()}:null;
 }
 const onFace=(lon,lat)=>d3.geoDistance([lon,lat],[view.lon,view.lat])<Math.PI/2-.015;
 
