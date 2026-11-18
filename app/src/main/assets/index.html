@@ -2430,10 +2430,11 @@ $('tglStyle').classList.toggle('off',mapStyle!=='toon');
 $('tglStyle').addEventListener('click',e=>{mapStyle=mapStyle==='toon'?'sat':'toon';try{localStorage.setItem('jetlag-style',mapStyle)}catch(_){}e.currentTarget.classList.toggle('off',mapStyle!=='toon');needsDraw=true;toast(mapStyle==='toon'?'Illustrated map':'Satellite map')});
 $('tglClouds').addEventListener('click',e=>{showClouds=!showClouds;e.currentTarget.classList.toggle('off',!showClouds);needsDraw=true;toast(showClouds?'Clouds on':'Clouds off')});
 $('tglNight').addEventListener('click',e=>{showNight=!showNight;e.currentTarget.classList.toggle('off',!showNight);needsDraw=true;toast(showNight?'Night on':'Night off')});
+const COIN_Z0=35,COIN_Z1=55; // coins fade in between these zooms
 function locateMe(){
   if(!me||!me.at){const a=AP[START];centerOn(a.lon,a.lat,minZ*1.5);return}
   const now=Date.now(),w=whereIs(me,now);
-  if(w.kind==='air'){follow=true;const s=flightState(myTpl(me.booking),me.booking.dep,now);centerOn(s.lon,s.lat,Math.max(view.z,minZ*2));renderSheet()}
+  if(w.kind==='air'){follow=true;const s=flightState(myTpl(me.booking),me.booking.dep,now);centerOn(s.lon,s.lat,me.booking.tut?Math.max(view.z,minZ*2):COIN_Z1);renderSheet()}
   else{const a=AP[w.ap];centerOn(a.lon,a.lat,Math.max(view.z,minZ*2))}
 }
 let toastT=null;
@@ -3379,7 +3380,7 @@ function draw(){
   }
   // coins waiting along my route (drawn first, so planes sit on top of them)
   if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?flightState(myInst.t,b.dep,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
-    const ca=me.booking.tut?1:ss(35,55,z);
+    const ca=me.booking.tut?1:ss(COIN_Z0,COIN_Z1,z);
     const coinAt=(c,col,ring,rr,alpha)=>{const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))return null;const xy=proj(q);if(xy[0]<-12||xy[0]>W+12||xy[1]<-12||xy[1]>H+12)return null;
       const bob=Math.sin(now/300+c.i)*1.5;ctx.globalAlpha=alpha;ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr,0,7);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
       ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle=ring;ctx.stroke();
