@@ -3008,7 +3008,7 @@ in vec2 a;void main(){gl_Position=vec4(a,0.,1.);}`;
 const FS=`#version 300 es
 precision highp float;
 uniform vec2 uC2;uniform float uR,uMap,uNight,uClouds,uCS,uDpr,uStyle,uCloudA;uniform vec3 uCv,uEv,uNv,uSun;uniform vec2 uRes;
-uniform sampler2D tDay,tNight,tWater,tRel,tMap,tCloud,tLand,tUrb,tNear;uniform float uSdf,uUrb,uRelA,uLtex,uOpen,uCtry;uniform sampler2D tZone,tCtry,tWx;uniform float uWx,uRain;uniform vec2 uShOff;
+uniform sampler2D tDay,tNight,tWater,tRel,tMap,tCloud,tLand,tUrb,tNear;uniform float uSdf,uUrb,uRelA,uLtex,uOpen,uCtry;uniform sampler2D tZone,tCtry,tWx;uniform float uWx,uRain,uWR;uniform vec2 uShOff,uWC2;uniform vec3 uWCv,uWEv,uWNv;
 out vec4 o;
 const float PI=3.14159265359;
 float h21(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
@@ -3068,7 +3068,10 @@ void main(){
   vec3 P=w*uCv+q.x*uEv+q.y*uNv;
   float lat=asin(clamp(P.z,-1.,1.)),lon=atan(P.y,P.x);
   vec2 uv=vec2((lon+PI)/(2.*PI),(PI*.5-lat)/PI);
-  vec4 wx=uWx>0.?texture(tWx,gl_FragCoord.xy/uRes):vec4(0.);
+  // the weather texture was drawn for the view it was rendered at; find this point in it
+  vec2 wuv=(vec2(dot(P,uWEv),dot(P,uWNv))*uWR+uWC2)/uRes;
+  bool win=uWx>0.&&dot(P,uWCv)>0.&&wuv.x>=0.&&wuv.y>=0.&&wuv.x<=1.&&wuv.y<=1.;
+  vec4 wx=win?texture(tWx,wuv):vec4(0.);
   // seam-safe texture derivatives
   vec2 gx=dFdx(uv),gy=dFdy(uv);float ux2=fract(uv.x+.5),ax=dFdx(ux2),ay=dFdy(ux2);
   if(abs(ax)<abs(gx.x))gx.x=ax;if(abs(ay)<abs(gy.x))gy.x=ay;
@@ -3112,7 +3115,7 @@ void main(){
     col=mix(land,ocean,wat);
     // flat cartoon clouds with a shadow on the ground
     if(uClouds>0.&&uCloudA>0.&&uWx>0.){
-      float cs=texture(tWx,(gl_FragCoord.xy+uShOff)/uRes).r,cd=wx.r,ce=fwidth(cd)+.012;
+      float cs=win?texture(tWx,wuv+uShOff/uRes).r:0.,cd=wx.r,ce=fwidth(cd)+.012;
       col*=1.-.16*smoothstep(.5-ce,.5+ce,cs)*uCloudA;
       ca=smoothstep(.5-ce,.5+ce,cd)*uCloudA;col=mix(col,vec3(1.),ca*.94);}
     col*=.93+.12*max(dot(n,L),0.);
@@ -3328,7 +3331,7 @@ function initGL(dayBytes){
     GLP=p;g.useProgram(p);
     const b=g.createBuffer();g.bindBuffer(g.ARRAY_BUFFER,b);g.bufferData(g.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),g.STATIC_DRAW);
     const loc=g.getAttribLocation(p,'a');g.enableVertexAttribArray(loc);g.vertexAttribPointer(loc,2,g.FLOAT,false,0,0);
-    for(const n of ['uC2','uR','uMap','uNight','uClouds','uCS','uDpr','uCv','uEv','uNv','uSun','uRes','tDay','tNight','tWater','tRel','tMap','tCloud','tLand','tUrb','tNear','uSdf','uUrb','uRelA','uStyle','uCloudA','uLtex','tZone','uOpen','tCtry','uCtry','uWx','uRain','uShOff'])GLU[n]=g.getUniformLocation(p,n);
+    for(const n of ['uC2','uR','uMap','uNight','uClouds','uCS','uDpr','uCv','uEv','uNv','uSun','uRes','tDay','tNight','tWater','tRel','tMap','tCloud','tLand','tUrb','tNear','uSdf','uUrb','uRelA','uStyle','uCloudA','uLtex','tZone','uOpen','tCtry','uCtry','uWx','uRain','uShOff','uWR','uWC2','uWCv','uWEv','uWNv'])GLU[n]=g.getUniformLocation(p,n);
     const E=EARTH;
     glTex(0,E.dw,E.dh,'rgba',dayBytes);
     glTex(1,E.nw,E.nh,'r',E.night);
@@ -3347,7 +3350,7 @@ function initGL(dayBytes){
 glc.addEventListener('webglcontextlost',e=>{e.preventDefault();GL=null;GLL=null;glc._lost=true;glc.style.display='none';globeKey='';detailKey='';needsDraw=true});
 glc.addEventListener('webglcontextrestored',()=>{glc._lost=false;GL=null;GLL=null;sdfReady=0;globeKey='';detailKey='';if(EARTH)initGL(new Uint8Array(EARTH.day.buffer));needsDraw=true});
 /* ---------- live weather: the same storms for every player, worked out from the clock ---------- */
-let showRain=true,WXP=null,WXU={},wxKey='',wxNow=null;
+let showRain=true,WXP=null,WXU={},wxKey='',wxNow=null,wxView=null,wxLastAt=0,wxMoving=false,wxRenders=0;
 const wxH=(a,b,c,d)=>{let h=Math.imul(a|0,374761393)^Math.imul(b|0,668265263)^Math.imul(c|0,1274126177)^Math.imul(d|0,2246822519);h=Math.imul(h^(h>>>13),1274126177);h^=h>>>16;return (h>>>0)/4294967296};
 // tropical cyclone basins: where storms form, which way they head, and when in the year they're busiest
 const WX_BASINS=[
@@ -3463,15 +3466,21 @@ function initWx(g){
   g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array(4));
   for(const [k,v] of [[g.TEXTURE_MIN_FILTER,g.LINEAR],[g.TEXTURE_MAG_FILTER,g.LINEAR],[g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE],[g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE]])g.texParameteri(g.TEXTURE_2D,k,v);
   const fb=g.createFramebuffer();g.bindFramebuffer(g.FRAMEBUFFER,fb);g.framebufferTexture2D(g.FRAMEBUFFER,g.COLOR_ATTACHMENT0,g.TEXTURE_2D,tex,0);g.bindFramebuffer(g.FRAMEBUFFER,null);
-  WXP={p,tex,fb,w:1,h:1};wxKey='';
+  WXP={p,tex,fb,w:1,h:1};wxKey='';wxView=null;
   g.useProgram(GLP);g.uniform1i(g.getUniformLocation(GLP,'tWx'),11);
 }
 // the weather is drawn into its own texture only when the view moves or every half minute, then the globe reads it
 function renderWx(cw,ch){
   const g=GL;if(!WXP)return false;if(!showRain&&!showClouds)return false;
-  const now=wxForceMs??Date.now(),step=Math.floor(now/30000);
+  const now=wxForceMs??Date.now(),step=Math.floor(now/30000),t=performance.now();
   const key=[view.lon.toFixed(4),view.lat.toFixed(4),R().toFixed(3),cw,ch,focusY(),step].join('|');
-  if(key===wxKey)return true;wxKey=key;
+  if(key===wxKey&&wxView)return true;
+  const sized=WXP.w===cw&&WXP.h===ch;
+  if(wxView&&sized&&wxKey!==''){
+    if(wxMoving&&t-wxLastAt<180)return true;                              // moving: the last render is reprojected in between
+    if(wxView.step!==step&&wxView.vk===key.split('|').slice(0,6).join('|')&&t-wxLastAt<90)return true; // forecast playback: about 10 a second
+  }
+  wxKey=key;wxLastAt=t;wxRenders++;
   if(!wxNow||wxNow.step!==step){wxNow=wxState(step*30000);wxNow.step=step}
   const S=wxNow;
   g.activeTexture(g.TEXTURE0+11);g.bindTexture(g.TEXTURE_2D,WXP.tex);
@@ -3487,6 +3496,7 @@ function renderWx(cw,ch){
   g.uniform4fv(WXU.uCy,ca);g.uniform4fv(WXU.uCyE,cb);g.uniform4fv(WXU.uTc,ta);g.uniform4fv(WXU.uTcE,tb);
   g.drawArrays(g.TRIANGLE_STRIP,0,4);
   g.bindFramebuffer(g.FRAMEBUFFER,null);g.useProgram(GLP);g.viewport(0,0,cw,ch);
+  wxView={step,vk:key.split('|').slice(0,6).join('|'),cv:[cp*cl,cp*sl,sp],ev:[-sl,cl,0],nv:[-sp*cl,-sp*sl,cp],c2:[W/2*GLDPR,(H-focusY())*GLDPR],r:R()*GLDPR};
   return true}
 function renderGL(){
   const g=GL;GLDPR=Math.min(DPR,2);
@@ -3498,7 +3508,8 @@ function renderGL(){
   g.uniform1f(GLU.uMap,mapT(view.z));g.uniform1f(GLU.uSdf,sdfReady&1);g.uniform1f(GLU.uUrb,sdfReady&2?ss(5.5,9,view.z):0);g.uniform1f(GLU.uRelA,1-.65*ss(10,40,view.z));g.uniform1f(GLU.uStyle,mapStyle==='toon'?1:0);g.uniform1f(GLU.uOpen,openRank());g.uniform1f(GLU.uCtry,selected&&selected.kind==='country'?selected.id:0);g.uniform1f(GLU.uLtex,mapStyle==='toon'?1-ss(4.5,8,view.z):1);g.uniform1f(GLU.uCloudA,1-ss(4,9,view.z));g.uniform1f(GLU.uNight,showNight?1-ss(3.5,6.5,view.z):0);g.uniform1f(GLU.uClouds,showClouds?1:0);
   const now=Date.now(),s=sunVec(now);g.uniform3f(GLU.uSun,s[0],s[1],s[2]);g.uniform1f(GLU.uCS,((now/3600000)*1.2%CW)/CW);
   let wxOn=false;try{wxOn=renderWx(cw,ch)}catch(e){WXP=null;g.bindFramebuffer(g.FRAMEBUFFER,null);g.useProgram(GLP);g.viewport(0,0,cw,ch)}
-  g.uniform1f(GLU.uWx,wxOn?1:0);g.uniform1f(GLU.uRain,wxOn&&showRain?1:0);{const k=Math.max(2,Math.min(9,R()*.012))*GLDPR;g.uniform2f(GLU.uShOff,-k,k)}
+  if(wxOn&&wxView){const v=wxView;g.uniform3f(GLU.uWCv,...v.cv);g.uniform3f(GLU.uWEv,...v.ev);g.uniform3f(GLU.uWNv,...v.nv);g.uniform2f(GLU.uWC2,...v.c2);g.uniform1f(GLU.uWR,v.r)}
+  g.uniform1f(GLU.uWx,wxOn&&wxView?1:0);g.uniform1f(GLU.uRain,wxOn&&showRain?1:0);{const k=Math.max(2,Math.min(9,R()*.012))*GLDPR;g.uniform2f(GLU.uShOff,-k,k)}
   g.drawArrays(g.TRIANGLE_STRIP,0,4);
   if(!GLL)initGLLines();
   renderGLLines();
@@ -3630,6 +3641,7 @@ function draw(){
   if(st==='flying'&&follow&&!anim&&!g){const s=myFS(me.booking,now);view.lon=s.lon;view.lat=clamp(s.lat,-80,80)}
   syncProj();
   const z=view.z,r=R(),cx=W/2,cy=focusY(),moving=!!(anim||inertia||g);
+  wxMoving=moving;
   if(GL){renderGL();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.setTransform(DPR,0,0,DPR,0,0)}
   else{
     ctx.setTransform(DPR,0,0,DPR,0,0);
