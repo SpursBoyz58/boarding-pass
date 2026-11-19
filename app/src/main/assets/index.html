@@ -578,6 +578,18 @@ em.coin .cn{display:inline;font:inherit;color:inherit;letter-spacing:inherit;tex
 .cabin .upg{font-family:var(--disp);font-weight:700;font-size:14px;color:#1e7be6}
 .lnum.lpts{margin-top:18px;min-width:200px;flex:none}
 .lloy{display:flex;align-items:center;gap:10px;width:100%;max-width:400px;margin-top:22px}.lloy .xpbar{flex:1;margin:0}
+
+/* pre-flight route planner */
+body.planning #nav,body.planning #sheet,body.planning #rail,body.planning #card{display:none!important}
+#plan{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:9;max-width:560px;margin:0 auto;background:#fff;border:2px solid var(--ink);border-radius:22px;box-shadow:0 5px 0 var(--ink);padding:14px;color:var(--text)}
+#plan .k{font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:11px;color:var(--muted)}#plan h2{margin:2px 0 10px;font-family:var(--disp);font-weight:600;font-size:20px;line-height:24px}
+#plan .rw{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}#plan .rw div{background:var(--raised);border:2px solid var(--line);border-radius:14px;padding:8px 4px;text-align:center}
+#plan .rw b{display:block;font-family:var(--disp);font-weight:600;font-size:16px;white-space:nowrap}#plan .rw span{font-size:11.5px;font-weight:800;color:var(--muted)}
+#plan .row{display:flex;gap:10px;margin-top:12px}#plan .ghost{flex:1;height:52px;border-radius:16px;border:2px solid var(--line);background:#fff;font-family:var(--disp);font-weight:600;font-size:16px;color:var(--text)}
+#plan .cta{flex:1.6;margin:0;height:52px}
+#plan .tl{display:flex;align-items:center;gap:10px;margin:2px 0 12px}#plan .tl button{width:40px;height:40px;flex:none;border-radius:50%;border:2px solid var(--ink);background:#ffd23f;box-shadow:0 3px 0 var(--ink);display:grid;place-items:center}
+#plan .tl input{flex:1;accent-color:#ff8a1f;height:28px}#plan .tl b{font-family:var(--disp);font-weight:600;font-size:15px;min-width:76px;text-align:right}
+#plan .foot{font-size:12.5px;color:var(--muted);margin-top:10px;font-weight:700}
 </style>
 </head>
 <body>
@@ -1300,7 +1312,7 @@ function cleanPlayer(d){
   let b=null;
   const x=d.booking;
   if(x&&typeof x==='object'&&typeof x.key==='string'&&AP[x.o]&&AP[x.d]&&isFinite(x.dep)&&isFinite(x.arr))
-    b={key:x.key.slice(0,40),id:String(x.id||'').slice(0,8),al:String(x.al||'').slice(0,2),o:x.o,d:x.d,dep:+x.dep,arr:+x.arr,type:TYPES[x.type]?x.type:'A320neo',km:+x.km||0,seat:String(x.seat||'').slice(0,4),gate:String(x.gate||'').slice(0,4),fare:Math.max(0,+x.fare||0),cabin:CABINS.includes(x.cabin)?x.cabin:'Y',bt:+x.bt||0,tut:x.tut?1:0,cc:Array.isArray(x.cc)?x.cc.filter(n=>Number.isInteger(n)&&n>=0&&n<40).slice(0,40):[]};
+    b={key:x.key.slice(0,40),id:String(x.id||'').slice(0,8),al:String(x.al||'').slice(0,2),o:x.o,d:x.d,dep:+x.dep,arr:+x.arr,type:TYPES[x.type]?x.type:'A320neo',km:+x.km||0,seat:String(x.seat||'').slice(0,4),gate:String(x.gate||'').slice(0,4),fare:Math.max(0,+x.fare||0),cabin:CABINS.includes(x.cabin)?x.cabin:'Y',bt:+x.bt||0,tut:x.tut?1:0,cc:Array.isArray(x.cc)?x.cc.filter(n=>Number.isInteger(n)&&n>=0&&n<40).slice(0,40):[],rt:Array.isArray(x.rt)?x.rt.filter(q=>Array.isArray(q)&&q.length===2&&isFinite(q[0])&&isFinite(q[1])&&Math.abs(q[0])<=90&&Math.abs(q[1])<=180).slice(0,4).map(q=>[+(+q[0]).toFixed(3),+(+q[1]).toFixed(3)]):[]};
   return {
     at:AP[d.at]?d.at:null, booking:b,
     visited:arr(d.visited,c=>!!AP[c]), airlines:arr(d.airlines,c=>!!AIRLINES[c]), types:arr(d.types,c=>!!TYPES[c]),
@@ -1686,7 +1698,7 @@ function seaAt(lon,lat){
   return lat>0?'the North Pacific':'the South Pacific';
 }
 function coinWhere(b,c){
-  const s=flightState(myTpl(b),b.dep,coinPassTime(b,c)),id=countryAt(s.lon,s.lat),C=id&&COUNTRIES[id-1];
+  const s=myFS(b,coinPassTime(b,c)),id=countryAt(s.lon,s.lat),C=id&&COUNTRIES[id-1];
   if(!C)return 'over '+seaAt(s.lon,s.lat);
   // over land: name a nearby city if there is one (not the airports you're flying between), else the country
   const v=vec(s.lat,s.lon);let best=null,bd=-1;
@@ -1772,11 +1784,12 @@ function book(key){
   save({...me,at:t.o,coins:me.coins-paid,upg:pr.upg?Date.now():(me.upg||0),booking:{key,id:t.id,al:t.al,o:t.o,d:t.d,dep:inst.dep,arr:inst.arr,type:t.type,km:t.km,seat:seatFor(key,t,cab),gate:gateFor(key),fare:paid,cabin:cab,bt:Date.now(),cc:[]}});
   closeModal();tab='explore';
   toast(paid?`Booked ${CAB_NAME[cab].toLowerCase()} on ${t.id} to ${AP[t.d].city} · −${paid.toLocaleString('en')} coins`:`Standby seat to ${AP[t.d].city}`);
+  setTimeout(openPlanner,60);
 }
 function cancelBooking(){
   if(!me||!me.booking)return;
   if(Date.now()>=me.booking.dep){toast('This flight has already left');return}
-  const r=me.booking.fare||0;save({...me,booking:null,coins:me.coins+r});toast(r?`Ticket cancelled · +${r} coins`:'Ticket cancelled');
+  closePlanner();const r=me.booking.fare||0;save({...me,booking:null,coins:me.coins+r});toast(r?`Ticket cancelled · +${r} coins`:'Ticket cancelled');
 }
 
 /* ---------- levels: XP is worked out from what a player has done, so everyone's level is consistent ---------- */
@@ -2175,7 +2188,7 @@ function tripHTML(now,st){
   h+=peopleCard(b.key,st==='flying'?'On board':'Booked on this flight');
   h+=`<div class="card"><h2>${esc(b.type)}</h2><div class="sub">${al?esc(al.name):''} · ${(TYPES[b.type]||{}).s||''} seats</div>
     <div class="plane-art">${aircraftArt(b.type,al?al.color:'#1d4ed8')}</div>${status(st==='flying'?'In the air':'On time',st==='flying'?'live':'ok')}</div>`;
-  if(st==='booked') h+=`<div class="btnrow"><button class="ghost" data-act="showme">${ICON.target}Show on map</button><button class="ghost" data-act="cancel">Cancel ticket</button></div>`;
+  if(st==='booked') h+=`<button class="cta" data-act="plan" style="margin-top:12px">${b.rt&&b.rt.length?'Change your route':'Plan your route'}</button><div class="btnrow"><button class="ghost" data-act="showme">${ICON.target}Show on map</button><button class="ghost" data-act="cancel">Cancel ticket</button></div>`;
   return h;
 }
 function peopleCard(key,title){
@@ -2413,6 +2426,7 @@ document.addEventListener('click',e=>{
     case 'book':book(v);break;
     case 'cabin':flCab={key:flCab.key,cab:v};{const bx=$('bookbox');if(bx)bx.innerHTML=bookBox(flCab.key)}break;
     case 'cancel':cancelBooking();break;
+    case 'plan':openPlanner();break;
     case 'close':closeModal();break;
     case 'uncard':selected=null;renderCard();needsDraw=true;break;
     case 'follow':follow=!follow;needsDraw=true;renderSheet();break;
@@ -2436,7 +2450,7 @@ const COIN_Z0=35,COIN_Z1=55; // coins fade in between these zooms
 function locateMe(){
   if(!me||!me.at){const a=AP[START];centerOn(a.lon,a.lat,minZ*1.5);return}
   const now=Date.now(),w=whereIs(me,now);
-  if(w.kind==='air'){follow=true;const s=flightState(myTpl(me.booking),me.booking.dep,now);centerOn(s.lon,s.lat,me.booking.tut?Math.max(view.z,minZ*2):COIN_Z1,true);renderSheet()}
+  if(w.kind==='air'){follow=true;const s=myFS(me.booking,now);centerOn(s.lon,s.lat,me.booking.tut?Math.max(view.z,minZ*2):COIN_Z1,true);renderSheet()}
   else{const a=AP[w.ap];centerOn(a.lon,a.lat,Math.max(view.z,minZ*2),true)}
 }
 let toastT=null;
@@ -2641,6 +2655,27 @@ function drawPlane(x,y,ang,s,fill,stroke){
   ctx.restore();
 }
 const pt=(A,B,p)=>p<=0?[A.lon,A.lat]:p>=1?[B.lon,B.lat]:slerp(A,B,p);
+// ---------- your own route: a smooth curve from gate to gate through the points you set before departure ----------
+let PLAN=null;const RT_CACHE=new Map();
+function routeBuild(A,B,wps){
+  const P=[vec(A.lat,A.lon),...wps,vec(B.lat,B.lon)],n=P.length-1,sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],nrm=a=>Math.hypot(a[0],a[1],a[2]);
+  const d=[];for(let i=0;i<n;i++)d.push(nrm(sub(P[i+1],P[i]))||1e-6);const tot=d.reduce((s,x)=>s+x,0);
+  const m=P.map((q,i)=>i===0?sub(P[1],P[0]).map(x=>x/d[0]):i===n?sub(P[n],P[n-1]).map(x=>x/d[n-1]):sub(P[i+1],P[i-1]).map(x=>x/(d[i-1]+d[i])));
+  const pts=[],seg=[];
+  for(let i=0;i<n;i++){const N=Math.max(12,Math.round(160*d[i]/tot));for(let s=(i?1:0);s<=N;s++){const t=s/N,t2=t*t,t3=t2*t,h00=2*t3-3*t2+1,h10=t3-2*t2+t,h01=-2*t3+3*t2,h11=t3-t2;
+    const v=[0,1,2].map(j=>h00*P[i][j]+h10*d[i]*m[i][j]+h01*P[i+1][j]+h11*d[i]*m[i+1][j]),l=nrm(v);pts.push([Math.atan2(v[1],v[0])/rad,Math.asin(v[2]/l)/rad]);seg.push(i)}}
+  const cum=[0];let D=0;for(let i=1;i<pts.length;i++){D+=d3.geoDistance(pts[i-1],pts[i]);cum.push(D)}for(let i=0;i<cum.length;i++)cum[i]/=D||1;
+  return {pts,seg,cum,D,km:D*6371}}
+function routeAt(r,p){if(p<=0)return r.pts[0];if(p>=1)return r.pts[r.pts.length-1];let lo=0,hi=r.cum.length-1;while(hi-lo>1){const k=(lo+hi)>>1;if(r.cum[k]<p)lo=k;else hi=k}
+  const f=(p-r.cum[lo])/((r.cum[hi]-r.cum[lo])||1);return d3.geoInterpolate(r.pts[lo],r.pts[hi])(f)}
+function routeSlice(r,p0,p1){const o=[routeAt(r,p0)];for(let i=0;i<r.pts.length;i++)if(r.cum[i]>p0&&r.cum[i]<p1)o.push(r.pts[i]);o.push(routeAt(r,p1));return o}
+function rtPath(b){if(!b)return null;if(PLAN&&me&&b===me.booking)return PLAN.r;if(!b.rt||!b.rt.length)return null;
+  const k=b.o+b.d+JSON.stringify(b.rt);let r=RT_CACHE.get(k);if(!r){r=routeBuild(AP[b.o],AP[b.d],b.rt.map(q=>vec(q[0],q[1])));if(RT_CACHE.size>20)RT_CACHE.clear();RT_CACHE.set(k,r)}return r}
+const bPt=(b,p)=>{const r=rtPath(b);return r?routeAt(r,p):pt(AP[b.o],AP[b.d],p)};
+// where your plane is: the scheduled timing, along your own route if you set one
+function myFS(b,now){const s=flightState(myTpl(b),b.dep,now),r=rtPath(b);if(r){const q=routeAt(r,s.p);s.lon=q[0];s.lat=q[1]}return s}
+function strokeLL(pts,color,w,dash){ctx.save();ctx.beginPath();gpath({type:'LineString',coordinates:pts});ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineCap=dash?'butt':'round';ctx.lineJoin='round';ctx.setLineDash(dash||[]);ctx.stroke();ctx.restore()}
+function drawRouteTrail(r,p){if(p>0){const f=routeSlice(r,0,p);strokeLL(f,'rgba(20,45,85,.35)',5.4);strokeLL(f,'#ffffff',3)}strokeLL(routeSlice(r,p,1),'rgba(255,255,255,.55)',1.4);drawDots(null,null,p,1,'#ffffff',4,q=>routeAt(r,q),r.D)}
 function strokeArc(A,B,p0,p1,color,w,dash,doff){
   if(p1-p0<=0)return;ctx.save();ctx.beginPath();gpath({type:'LineString',coordinates:[pt(A,B,p0),pt(A,B,(p0+p1)/2),pt(A,B,p1)]});
   ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineCap=dash?'butt':'round';ctx.setLineDash(dash||[]);ctx.lineDashOffset=doff||0;ctx.stroke();ctx.restore();
@@ -2659,11 +2694,11 @@ function apRoutes(code){const m=new Map();for(const t of TPL){if(t.o===code)m.se
 function apPad(x,y,h,fill){rrect(x-h,y-h,h*2,h*2,h*.55);ctx.fillStyle=fill;ctx.fill();ctx.lineWidth=1.8;ctx.strokeStyle='#26304a';ctx.stroke()}
 const drawTrail=(A,B,p,w)=>{if(p>0){strokeArc(A,B,0,p,'rgba(20,45,85,.35)',w+2.4);strokeArc(A,B,0,p,'#ffffff',w)}};
 // the dots ahead are pinned to the route itself (counted from the origin), so the plane flies into them and they disappear behind it
-function drawDots(A,B,p0,p1,color,w){
-  const D=d3.geoDistance([A.lon,A.lat],[B.lon,B.lat]);if(!(D>0)||p1<=p0)return;
+function drawDots(A,B,p0,p1,color,w,at,DD){
+  const D=DD||d3.geoDistance([A.lon,A.lat],[B.lon,B.lat]);if(!(D>0)||p1<=p0)return;
   const step=(w*3.4)/R()/D,gap=(w*2.6)/R()/D,r=w/2;
   let k=Math.ceil((p0+gap)/step),n=0;ctx.beginPath();
-  for(;k*step<=p1&&n<4000;k++,n++){const q=pt(A,B,k*step);if(!onFace(q[0],q[1]))continue;const xy=proj(q);
+  for(;k*step<=p1&&n<4000;k++,n++){const q=at?at(k*step):pt(A,B,k*step);if(!onFace(q[0],q[1]))continue;const xy=proj(q);
     if(xy[0]<-4||xy[0]>W+4||xy[1]<-4||xy[1]>H+4)continue;ctx.moveTo(xy[0]+r,xy[1]);ctx.arc(xy[0],xy[1],r,0,6.2832)}
   ctx.lineWidth=1.6;ctx.strokeStyle='#26304a';ctx.stroke();ctx.fillStyle=color;ctx.fill();
 }
@@ -2674,8 +2709,8 @@ function badge(x,y,n){
   ctx.fillStyle='#1c1300';ctx.beginPath();ctx.arc(x+8,y-2.8,2.4,0,7);ctx.fill();ctx.beginPath();ctx.arc(x+8,y+4.4,4.1,Math.PI,0);ctx.fill();
   ctx.fillText(t,x+13.5,y+3.8);
 }
-function headingOn(A,B,p,xy){
-  const back=p>=.996,q=proj(pt(A,B,back?p-.004:Math.min(1,p+.004)));if(!q)return 0;
+function headingOn(A,B,p,xy,b){
+  const back=p>=.996,pp=back?p-.004:Math.min(1,p+.004),q=proj(b?bPt(b,pp):pt(A,B,pp));if(!q)return 0;
   const dx=back?xy[0]-q[0]:q[0]-xy[0],dy=back?xy[1]-q[1]:q[1]-xy[1];
   return Math.atan2(dy,dx)+Math.PI/2;
 }
@@ -3351,6 +3386,72 @@ function wxState(ms){
     if(I>.03)tc.push({lat,lon,R:380+200*r(6),I,basin:bi})}});
   tc.sort((a,b)=>b.I-a.I);
   return {sg,utc,FA,FB,SA,SB,cy,tc:tc.slice(0,6)}}
+// the same weather in JavaScript, for checking a route against the forecast (mirrors WXFS; the hash runs in 32-bit floats like the GPU)
+let wxForceMs=null;
+const wxF=Math.fround,WXC=wxF(.3183099),WXT=wxF(.1),WXSC=new Map();
+function wxH31(x,y,z){let a=wxF(wxF(x*WXC)+WXT),b=wxF(wxF(y*WXC)+WXT),c=wxF(wxF(z*WXC)+WXT);a-=Math.floor(a);b-=Math.floor(b);c-=Math.floor(c);
+  a=wxF(a*17);b=wxF(b*17);c=wxF(c*17);const m=wxF(wxF(wxF(a*b)*c)*wxF(wxF(a+b)+c));return m-Math.floor(m)}
+function wxVn(x,y,z){const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z);let fx=x-xi,fy=y-yi,fz=z-zi;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);fz=fz*fz*(3-2*fz);
+  const L=(a,b,t)=>a*(1-t)+b*t,h=wxH31;
+  return L(L(L(h(xi,yi,zi),h(xi+1,yi,zi),fx),L(h(xi,yi+1,zi),h(xi+1,yi+1,zi),fx),fy),L(L(h(xi,yi,zi+1),h(xi+1,yi,zi+1),fx),L(h(xi,yi+1,zi+1),h(xi+1,yi+1,zi+1),fx),fy),fz)}
+const wxG1=(x,w)=>Math.exp(-x*x/(w*w)),wxSS=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)},wxMix=(a,b,t)=>a*(1-t)+b*t;
+const wxMod=(x,y)=>x-y*Math.floor(x/y),wxWrap=a=>wxMod(a+180,360)-180;
+function wxAdv(P,lat,age){const al=Math.abs(lat)*57.2958,u=-6.5*wxG1(al,15)+14*wxG1(al-46,13)-3*wxG1(al-75,8),a=-u*3.6*age/(6371*Math.max(Math.cos(lat),.2)),c=Math.cos(a),s=Math.sin(a);return [P[0]*c-P[1]*s,P[0]*s+P[1]*c,P[2]]}
+function wxFbm(x,y,z){return .55*wxVn(x,y,z)+.3*wxVn(x*2.03+7.1,y*2.03+7.1,z*2.03+7.1)+.15*wxVn(x*4.1+3.3,y*4.1+3.3,z*4.1+3.3)}
+function wxFlow(P,lat,f,A,B){const pa=wxAdv(P,lat,A[0]),pb=wxAdv(P,lat,B[0]);
+  const a=wxFbm(pa[0]*f+A[2]*1.7,pa[1]*f+A[2]*2.3,pa[2]*f+A[2]*3.1),b=wxFbm(pb[0]*f+B[2]*1.7,pb[1]*f+B[2]*2.3,pb[2]*f+B[2]*3.1);
+  return .5+(A[1]*(a-.5)+B[1]*(b-.5))/Math.sqrt(A[1]*A[1]+B[1]*B[1])}
+function wxDetail(P,lat,S,uR){let v=0,amp=.5,tot=0,f=40;const pa=wxAdv(P,lat,S.FA[0]),pb=wxAdv(P,lat,S.FB[0]),A=S.FA,B=S.FB;
+  for(let k=0;k<5;k++){if(f>uR*.45)break;const oa=A[2]*1.3+k*5.1,ob=B[2]*1.3+k*5.1;
+    const a=wxVn(pa[0]*f+oa,pa[1]*f+oa,pa[2]*f+oa),b=wxVn(pb[0]*f+ob,pb[1]*f+ob,pb[2]*f+ob);
+    v+=amp*(.5+(A[1]*(a-.5)+B[1]*(b-.5))/Math.sqrt(A[1]*A[1]+B[1]*B[1]));tot+=amp;amp*=.55;f*=2.1}
+  return tot>0?v/tot:.5}
+const wxEll=(la,lo,cla,clo,wla,wlo)=>{const y=(la-cla)/wla,x=wxWrap(lo-clo)/wlo;return Math.exp(-(x*x+y*y))};
+function wxClimate(la,lo,sg){
+  let it=5+3*sg;const wA=wxG1(wxWrap(lo-20),28),wS=wxG1(wxWrap(lo+60),20),wM=wxG1(wxWrap(lo-118),32),wI=wxG1(wxWrap(lo-80),14);
+  it=wxMix(it,2+9*sg,wA);it=wxMix(it,-7+10*sg,wS);it=wxMix(it,3+15*sg,wM);it=wxMix(it,8+15*sg,wI*Math.max(sg,0));
+  const trop=wxG1(la-it,8)+.35*wxG1(la-it*.5,18),l360=wxMod(lo+360,360);
+  const spcz=wxG1(la-(-7-(l360-155)*.32),6)*wxSS(145,160,l360)*(1-wxSS(205,225,l360))*(.55-.3*sg);
+  const sacz=wxG1(la-(-14-(lo+50)*.6),5)*wxSS(-62,-52,lo)*(1-wxSS(-30,-20,lo))*Math.max(-sg,0)*.6;
+  const al=Math.abs(la),hs=Math.sign(la),storm=.5*wxG1(al-50,11)*(1-.3*sg*hs);
+  let c=trop+spcz+sacz+storm;c*=1-.55*wxG1(al-26,8);
+  const E=wxEll;let dry=Math.max(E(la,lo,23,8,9,24),E(la,lo,22,47,8,13),E(la,lo,29,63,6,12),E(la,lo,41,92,5,20),E(la,lo,-25,133,7,13),E(la,lo,-23,19,6,7),E(la,lo,-22,-70,9,3.5),E(la,lo,32,-112,6,8),
+    E(la,lo,-46,-68,5,3),E(la,lo,-18,-95,11,20),E(la,lo,-18,-2,10,14),E(la,lo,24,-130,7,14));
+  c*=1-.92*dry;c*=1-wxSS(72,88,al)*.7;return Math.min(1.2,Math.max(0,c))}
+const wxDecks=(la,lo)=>Math.max(wxEll(la,lo,-18,-85,9,14),wxEll(la,lo,-17,2,8,11),wxEll(la,lo,27,-128,7,12),wxEll(la,lo,-30,100,6,10));
+function wxStateAt(ms){const step=Math.floor(ms/30000);let S=WXSC.get(step);if(S)return S;
+  S=wxState(step*30000);const fr=c=>{const f=wxFrame(c.lat,c.lon,c.rot||0),C=f.C,E=f.E;return {C,E,N:[C[1]*E[2]-C[2]*E[1],C[2]*E[0]-C[0]*E[2],C[0]*E[1]-C[1]*E[0]],I:c.I,R:c.R}};
+  S.cyF=S.cy.slice(0,24).map(fr);S.tcF=S.tc.slice(0,6).map(fr);if(WXSC.size>1500)WXSC.clear();WXSC.set(step,S);return S}
+// rain (0..1) and snow share at a place and time
+function wxSample(la,lo,ms,uR=300){
+  const S=wxStateAt(ms),lat=la*rad,lon=lo*rad,P=[Math.cos(lat)*Math.cos(lon),Math.cos(lat)*Math.sin(lon),Math.sin(lat)],sg=S.sg;
+  let land=0;if(typeof EARTH!=='undefined'&&EARTH&&EARTH.water){const x=((Math.floor((lo+180)/360*EARTH.ww)%EARTH.ww)+EARTH.ww)%EARTH.ww,y=Math.min(EARTH.wh-1,Math.max(0,Math.floor((90-la)/180*EARTH.wh)));land=EARTH.water[y*EARTH.ww+x]?0:1}
+  const clim=wxClimate(la,lo,sg),n1=wxFlow(P,lat,2.6,S.SA,S.SB),n2=wxFlow(P,lat,15,S.FA,S.FB),dt=wxDetail(P,lat,S,uR),cell=n2*.62+dt*.38;
+  const lst=wxMod(S.utc+lo/15,24),diur=.5+.5*Math.cos((lst-15)/24*2*Math.PI),summer=Math.min(1,Math.max(0,.5+Math.sign(la)*sg*.5+(1-wxSS(20,32,Math.abs(la))))),dmod=wxMix(1,.45+1.15*diur,land*summer);
+  const cluster=wxSS(.3,.6,n1);let C=Math.min(1,Math.max(0,clim*1.35+.06))*cluster*(.5+.95*wxSS(.28,.66,n2)),I=clim*cluster*wxSS(.4,.84,cell)*1.25*dmod;
+  C=Math.max(C,wxDecks(la,lo)*wxSS(.36,.6,n2)*.95);
+  const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  for(const c of S.cyF){if(c.I<=.01)continue;const Rk=c.R;if(dot(P,c.C)<Math.cos(3.2*Rk/6371))continue;const hs=Math.sign(c.C[2]);
+    const x=dot(P,c.E)*6371/Rk+(n2-.5)*.55+(n1-.5)*.5,y=dot(P,c.N)*6371/Rk*hs+(n1-.5)*.45-(n2-.5)*.3,r=Math.hypot(x,y),ang=Math.atan2(y,x);
+    const foot=Math.exp(-Math.pow(r/2.5,4)),head=wxG1(r-.48,.3)*wxSS(-.7,.8,Math.sin(ang-.35));
+    const ywf=-.12-.18*(x-.5),shield=wxG1(y-ywf-.32,.32)*wxSS(.15,.5,x)*(1-wxSS(1.4,2,x));
+    const yc=Math.min(9,Math.max(0,-y-.12)),xcf=.5-.13*yc*yc,front=wxG1(x-xcf,.1+.04*yc)*wxSS(-.05,.2,-y)*(1-wxSS(1.8,2.5,yc));
+    const behind=wxSS(xcf-.05,xcf-.4,x)*wxSS(.4,-.2,y)*(1-wxSS(1.6,2.4,r)),showers=behind*wxSS(.56,.8,cell);
+    const warm=wxSS(xcf+.05,xcf+.3,x)*wxSS(ywf+.05,ywf-.3,y)*wxG1(r,1.4);
+    const ci=c.I*foot*Math.max(head*.9,shield*.68,front*1.12,warm*.22);
+    I=Math.max(I,ci*wxMix(.5,1.15,wxSS(.3,.8,cell)),c.I*foot*showers*.8);
+    const cc=c.I*foot*Math.max(wxG1(r-.45,.55)*wxSS(-1,.6,Math.sin(ang-.35)),wxG1(y-ywf-.35,.55)*wxSS(-.1,.4,x)*(1-wxSS(1.6,2.3,x)),wxG1(x-xcf,.32)*wxSS(-.1,.1,-y),behind*.55*wxSS(.4,.6,cell));
+    C=Math.max(C,cc*1.25)}
+  for(const c of S.tcF){if(c.I<=.01)continue;const Rk=c.R;if(dot(P,c.C)<Math.cos(2.6*Rk/6371))continue;const hs=Math.sign(c.C[2]);
+    const x=dot(P,c.E)*6371+(n2-.5)*50,y=dot(P,c.N)*6371*hs+(n1-.5)*50,r=Math.max(Math.hypot(x,y),1),ang=Math.atan2(y,x);
+    const wall=wxG1(r-48,22),arms=Math.pow(.5+.5*Math.cos(2*ang+2.6*Math.log(r/48)),1.6)*Math.exp(-r/(Rk*.95))*wxSS(40,90,r);
+    const eye=wxSS(16,28,r),core=(1-wxSS(Rk*.18,Rk*.45,r))*.5;
+    I=Math.max(I,c.I*eye*Math.max(wall*1.08,Math.max(core,arms*1.15)*wxMix(.45,1.15,wxSS(.3,.8,cell))));
+    C=Math.max(C,c.I*eye*Math.max(1-wxSS(Rk*.5,Rk*.85,r),arms*1.8+.35*Math.exp(-r/Rk)))}
+  I*=wxSS(.42,.6,C);I=Math.max(0,I*(.72+.56*dt)-.05);
+  const sl=55+Math.sign(la)*10*sg+(1-land)*11;let snow=wxSS(sl-3,sl+3,Math.abs(la));snow=Math.max(snow,wxEll(la,lo,33,88,5,13)*.9);
+  return {rain:Math.min(1,I),snow,cloud:Math.min(1,C)}}
+
 function initWx(g){
   const sh=(type,src)=>{const s=g.createShader(type);g.shaderSource(s,src);g.compileShader(s);if(!g.getShaderParameter(s,g.COMPILE_STATUS))throw new Error(g.getShaderInfoLog(s));return s};
   const p=g.createProgram();g.attachShader(p,sh(g.VERTEX_SHADER,VS));g.attachShader(p,sh(g.FRAGMENT_SHADER,WXFS));
@@ -3368,7 +3469,7 @@ function initWx(g){
 // the weather is drawn into its own texture only when the view moves or every half minute, then the globe reads it
 function renderWx(cw,ch){
   const g=GL;if(!WXP)return false;if(!showRain&&!showClouds)return false;
-  const now=Date.now(),step=Math.floor(now/30000);
+  const now=wxForceMs??Date.now(),step=Math.floor(now/30000);
   const key=[view.lon.toFixed(4),view.lat.toFixed(4),R().toFixed(3),cw,ch,focusY(),step].join('|');
   if(key===wxKey)return true;wxKey=key;
   if(!wxNow||wxNow.step!==step){wxNow=wxState(step*30000);wxNow.step=step}
@@ -3526,7 +3627,7 @@ function draw(){
   const st=me?myState(now):'onboard';
   let myInst=null;
   if(st==='flying'||st==='booked'){const b=me.booking;myInst={t:myTpl(b),dep:b.dep,key:b.key}}
-  if(st==='flying'&&follow&&!anim&&!g){const s=flightState(myInst.t,myInst.dep,now);view.lon=s.lon;view.lat=clamp(s.lat,-80,80)}
+  if(st==='flying'&&follow&&!anim&&!g){const s=myFS(me.booking,now);view.lon=s.lon;view.lat=clamp(s.lat,-80,80)}
   syncProj();
   const z=view.z,r=R(),cx=W/2,cy=focusY(),moving=!!(anim||inertia||g);
   if(GL){renderGL();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.setTransform(DPR,0,0,DPR,0,0)}
@@ -3562,7 +3663,7 @@ function draw(){
   if(selected&&selected.kind==='plane'&&(!myInst||selected.key!==myInst.key)){const inst=parseKey(selected.key);if(inst&&now<inst.arr){const s=flightState(inst.t,inst.dep,now),A=AP[inst.t.o],B=AP[inst.t.d];drawTrail(A,B,s.p,3);strokeArc(A,B,s.p,1,'rgba(18,40,75,.4)',4.2);strokeArc(A,B,s.p,1,'#ffffff',2.4,[6,7]);selRoute=[A.code,B.code]}}
   if(routeView){const inst=parseKey(routeView);if(inst){const A=AP[inst.t.o],B=AP[inst.t.d],live=now>=inst.dep&&now<inst.arr,p=live?flightState(inst.t,inst.dep,now).p:now>=inst.arr?1:0;
     if(p>0)drawTrail(A,B,p,3);strokeArc(A,B,p,1,'rgba(18,40,75,.4)',4.2);strokeArc(A,B,p,1,'#ffffff',2.4,[6,7]);selRoute=[A.code,B.code]}}
-  if(myInst&&(!routeView||routeView===myInst.key)){const s=st==='flying'?flightState(myInst.t,myInst.dep,now):{p:0};const A=AP[myInst.t.o],B=AP[myInst.t.d];drawTrail(A,B,s.p,3);strokeArc(A,B,s.p,1,'rgba(255,255,255,.55)',1.4);drawDots(A,B,s.p,1,'#ffffff',4)}
+  if(myInst&&!PLAN&&(!routeView||routeView===myInst.key)){const s=st==='flying'?myFS(me.booking,now):{p:0};const A=AP[myInst.t.o],B=AP[myInst.t.d],rr=rtPath(me.booking);if(rr)drawRouteTrail(rr,s.p);else{drawTrail(A,B,s.p,3);strokeArc(A,B,s.p,1,'rgba(255,255,255,.55)',1.4);drawDots(A,B,s.p,1,'#ffffff',4)}}
   // city lights on the night side
   const SUN=sunVec(now);
   if(showNight&&!EARTH)for(const a of APL){const sd=a.v[0]*SUN[0]+a.v[1]*SUN[1]+a.v[2]*SUN[2];if(sd>.04||!onFace(a.lon,a.lat))continue;const [x,y]=proj([a.lon,a.lat]),k=Math.min(1,(.04-sd)/.14),rr=(a.tier===1?16:a.tier===2?11:7)*Math.min(1.6,Math.max(.7,z/4));const gl=ctx.createRadialGradient(x,y,0,x,y,rr);gl.addColorStop(0,`rgba(255,214,140,${.75*k})`);gl.addColorStop(.35,`rgba(255,180,90,${.3*k})`);gl.addColorStop(1,'rgba(255,170,80,0)');ctx.fillStyle=gl;ctx.beginPath();ctx.arc(x,y,rr,0,7);ctx.fill()}
@@ -3589,9 +3690,9 @@ function draw(){
     hits.push({x,y,r:14,kind:'airport',code:a.code,pri:0,box:lab?[x+6,y-11,x+16+(a._lw||60),y+11]:null});
   }
   // coins waiting along my route (drawn first, so planes sit on top of them)
-  if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?flightState(myInst.t,b.dep,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
+  if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?myFS(b,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
     const ca=me.booking.tut?1:ss(COIN_Z0,COIN_Z1,z);
-    const coinAt=(c,col,ring,rr,alpha)=>{const q=pt(A,B,c.p);if(!onFace(q[0],q[1]))return null;const xy=proj(q);if(xy[0]<-12||xy[0]>W+12||xy[1]<-12||xy[1]>H+12)return null;
+    const coinAt=(c,col,ring,rr,alpha)=>{const q=bPt(b,c.p);if(!onFace(q[0],q[1]))return null;const xy=proj(q);if(xy[0]<-12||xy[0]>W+12||xy[1]<-12||xy[1]>H+12)return null;
       const bob=Math.sin(now/300+c.i)*1.5;ctx.globalAlpha=alpha;ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr,0,7);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#26304a';ctx.stroke();
       ctx.beginPath();ctx.arc(xy[0],xy[1]+bob,rr-3,0,7);ctx.lineWidth=1.4;ctx.strokeStyle=ring;ctx.stroke();
       if(c.rare){ctx.fillStyle='#fff';ctx.beginPath();for(let k=0;k<8;k++){const a=k*Math.PI/4,l=k%2?2:5.5;ctx.lineTo(xy[0]+Math.cos(a)*l,xy[1]+bob+Math.sin(a)*l)}ctx.closePath();ctx.fill()}
@@ -3599,7 +3700,7 @@ function draw(){
     for(const d of dropsOf(b)){
       if(d.coins.every(c=>b.cc.includes(c.i)))continue;
       if(d.sp){ // special: always on the map, glowing, until its window closes
-        const w=spWindow(b,d);if(now>w[1])continue;const mid=d.coins[d.coins.length>>1],q=pt(A,B,mid.p);
+        const w=spWindow(b,d);if(now>w[1])continue;const mid=d.coins[d.coins.length>>1],q=bPt(b,mid.p);
         if(onFace(q[0],q[1])){const xy=proj(q),pr=(now%1600)/1600;ctx.beginPath();ctx.arc(xy[0],xy[1],12+pr*16,0,7);ctx.strokeStyle=`rgba(47,143,240,${(.7*(1-pr)).toFixed(3)})`;ctx.lineWidth=3;ctx.stroke()}
         for(const c of d.coins)if(!b.cc.includes(c.i))coinAt(c,'#2f8ff0','#bfe0ff',8,1);
       }else if(ca>.02)for(const c of d.coins){if(c.p<=s.p||b.cc.includes(c.i))continue;coinAt(c,'#ffd23f','#d99a00',c.rare?9:7,ca)}
@@ -3636,9 +3737,9 @@ function draw(){
     if(show)hits.push({x:xy[0],y:xy[1],r:16,kind:'plane',key:f.key,pri:1});
   }
   if(st==='flying'&&!routeView){
-    const s=flightState(myInst.t,myInst.dep,now);
+    const s=myFS(me.booking,now);
     if(onFace(s.lon,s.lat)){
-      const xy=proj([s.lon,s.lat]),A=AP[myInst.t.o],B=AP[myInst.t.d],ang=headingOn(A,B,s.p,xy),others=(onFlight.get(myInst.key)||[]).length-1;
+      const xy=proj([s.lon,s.lat]),A=AP[myInst.t.o],B=AP[myInst.t.d],ang=headingOn(A,B,s.p,xy,me.booking),others=(onFlight.get(myInst.key)||[]).length-1;
       // your plane: a yellow outline and a call-sign tag, so it's easy to find
       const L=PLANE_PX*1.2*planeSize(myInst.t.type);
       avoidBoxes.push([xy[0]-L*.7,xy[1]-L*.62-28,xy[0]+L*.7,xy[1]+L*.7],[xy[0]-70,xy[1]-L*.62-28,xy[0]+70,xy[1]-L*.62]);
@@ -3653,14 +3754,15 @@ function draw(){
     }
   }
   // a little pop when a coin is caught
-  if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?flightState(myInst.t,b.dep,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
+  if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?myFS(b,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
     const pxy=st==='flying'&&onFace(s.lon,s.lat)?proj([s.lon,s.lat]):null;coinFx=coinFx.filter(f=>now-f.t<1400);
     if(pxy)for(const f of coinFx){const k=(now-f.t)/1400;ctx.font='700 16px Fredoka, Nunito, sans-serif';ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#26304a';
       ctx.strokeText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.fillStyle='#ffd23f';ctx.fillText('+'+f.v,pxy[0],pxy[1]-22-k*26);ctx.globalAlpha=1;ctx.textAlign='left'}}
   // airport names sit above the planes so they're never hidden
   const hitsBox=(b)=>avoidBoxes.some(o=>!(b[2]<o[0]||b[0]>o[2]||b[3]<o[1]||b[1]>o[3]));
   for(const op of apLabelOps)if(!hitsBox(op.bx))op.fn();
-  if(!routeView)drawZoneBadges();
+  if(!routeView&&!PLAN)drawZoneBadges();
+  if(PLAN)drawPlan(now);
   // route picture: a tag off the middle of the line with the flight time
   if(routeView){const inst=parseKey(routeView);if(inst){const A=AP[inst.t.o],B=AP[inst.t.d],m=slerp(A,B,.5),q0=slerp(A,B,.47),q1=slerp(A,B,.53);
     if(onFace(m[0],m[1])){const xy=proj(m),p0=proj(q0),p1=proj(q1);let dx=p1[0]-p0[0],dy=p1[1]-p0[1];const dl=Math.hypot(dx,dy)||1;let nx=-dy/dl,ny=dx/dl;
@@ -3673,6 +3775,84 @@ function draw(){
       ctx.fillStyle='#26304a';ctx.textAlign='center';ctx.fillText(txt,tx,ty+5);ctx.textAlign='left'}}}
   updateOnline(now);
 }
+/* ---------- pre-flight: set your route around the forecast weather ---------- */
+const PL_MAXWP=4,PL_INK='#26304a',PL_SUN='#ffd23f',PL_RED='#e5484d';
+const plFmt=m=>{m=Math.round(m);return m<60?m+' min':Math.floor(m/60)+'h '+String(m%60).padStart(2,'0')+'m'};
+// minutes after departure at which your plane reaches a point p along its route (taxi, climb, cruise and descent included)
+function plTimes(b){const t=myTpl(b),N=300,span=b.arr-b.dep,ps=[];for(let i=0;i<=N;i++)ps.push(flightState(t,b.dep,b.dep+span*i/N).p);
+  return p=>{let i=1;while(i<N&&ps[i]<p)i++;if(p<=0){i=0;while(i<N&&ps[i+1]<=0)i++;return span*i/N/MIN}const a=ps[i-1],c=ps[i],f=c>a?(p-a)/(c-a):0;return span*(i-1+f)/N/MIN}}
+function openPlanner(){
+  const b=me&&me.booking;if(!b||b.tut||Date.now()>=b.dep)return;
+  PLAN={b,wp:(b.rt||[]).map(q=>vec(q[0],q[1])),TT:0,play:null,grab:null,tOf:plTimes(b),blk:(b.arr-b.dep)/MIN,direct:gdist(AP[b.o],AP[b.d])*1};
+  closeModal();selected=null;routeView=null;follow=false;anim=null;if(tab!=='globe')setTab('globe');renderCard();
+  document.body.classList.add('planning');let el=$('plan');if(!el){el=document.createElement('div');el.id='plan';document.body.appendChild(el)}
+  wxForceMs=b.dep;wxKey='';plEval();plFit();setTimeout(()=>{if(PLAN)plFit()},350);needsDraw=true}
+function closePlanner(){if(!PLAN)return;PLAN.play=null;PLAN=null;wxForceMs=null;wxKey='';document.body.classList.remove('planning');const el=$('plan');if(el)el.remove();needsDraw=true}
+function plEval(){const P=PLAN,b=P.b;P.r=routeBuild(AP[b.o],AP[b.d],P.wp);const r=P.r;
+  P.tm=r.cum.map(f=>P.tOf(f));P.sev=r.pts.map((q,i)=>wxSample(q[1],q[0],b.dep+P.tm[i]*MIN).rain);
+  let worst=0;P.bad=-1;P.sev.forEach((v,i)=>{worst=Math.max(worst,v);if(v>=.7&&P.bad<0)P.bad=i});
+  P.stats={worst,ride:worst>=.7?'Severe':worst>=.44?'Bumpy':worst>=.17?'Light chop':'Smooth',detour:Math.max(0,Math.round(r.km-P.direct))};
+  if(!P.grab)plCard();needsDraw=true}
+function plSetT(T){const P=PLAN;P.TT=Math.max(0,Math.min(P.blk,T));wxForceMs=P.b.dep+P.TT*MIN;const l=$('plTl');if(l)l.textContent=P.TT>0?'+'+plFmt(P.TT):'Departure';needsDraw=true}
+function plCard(){const P=PLAN,el=$('plan');if(!P||!el)return;const b=P.b,s=P.stats,A=AP[b.o],B=AP[b.d];
+  const col=s.ride==='Smooth'?'#1b7a35':s.ride==='Severe'?'#c42b2f':'var(--text)';
+  const h=s.ride==='Severe'?'Storm on your route at +'+plFmt(P.tm[P.bad]):s.ride==='Smooth'?'Clear skies all the way':'A few bumps on the way';
+  el.innerHTML=`<div class="k">Pre-flight · ${esc(b.id)} ${esc(A.city)} → ${esc(B.city)}</div><h2>${h}</h2>
+  <div class="tl"><button id="plPlay" aria-label="Play forecast"><svg width="16" height="16" viewBox="0 0 24 24"><path d="${P.play?'M7 5h4v14H7zM13 5h4v14h-4z':'M7 4l13 8-13 8z'}" fill="#26304a"/></svg></button><input id="plT" type="range" min="0" max="${Math.ceil(P.blk)}" step="1" value="${Math.round(P.TT)}" aria-label="Forecast time"><b id="plTl">${P.TT>0?'+'+plFmt(P.TT):'Departure'}</b></div>
+  <div class="rw"><div><b>${blkTxt(Math.round(P.blk))}</b><span>Flight time</span></div><div><b>${s.detour?'+'+s.detour.toLocaleString('en')+' km':'Direct'}</b><span>Detour</span></div><div><b style="color:${col}">${s.ride}</b><span>Ride</span></div></div>
+  <div class="row"><button class="ghost" id="plReset">Reset</button><button class="cta" id="plGo">Set route</button></div>
+  <div class="foot">Drag the line to bend it. Tap a point to remove it.</div>`;
+  $('plReset').onclick=()=>{PLAN.wp=[];plEval()};
+  $('plT').oninput=e=>{PLAN.play=null;plSetT(+e.target.value)};
+  $('plPlay').onclick=()=>{const P=PLAN;if(P.play){P.play=null;plCard();return}if(P.TT>=P.blk-1)plSetT(0);const t0=performance.now(),s0=P.TT,rate=P.blk/12;P.play=t0;plCard();
+    const step=()=>{if(!PLAN||PLAN.play!==t0)return;plSetT(s0+(performance.now()-t0)/1000*rate);const r=$('plT');if(r)r.value=Math.round(PLAN.TT);if(PLAN.TT<PLAN.blk)requestAnimationFrame(step);else{PLAN.play=null;plCard()}};requestAnimationFrame(step)};
+  $('plGo').onclick=()=>{const P=PLAN,rt=P.wp.map(v=>{const n=Math.hypot(...v);return [+(Math.asin(v[2]/n)/rad).toFixed(3),+(Math.atan2(v[1],v[0])/rad).toFixed(3)]});
+    const ride=P.stats.ride;closePlanner();if(me&&me.booking&&me.booking.key===b.key)save({...me,booking:{...me.booking,rt}});
+    toast(rt.length?`Route set · ${ride.toLowerCase()} ride expected`:`Direct route · ${ride.toLowerCase()} ride expected`)}}
+// frame the whole route above the card
+function plFit(){const P=PLAN;if(!P)return;const el=$('plan'),top=96,bot=H-(el?el.offsetHeight:300)-36,cx=W/2,cy=(top+bot)/2;
+  for(let it=0;it<14;it++){syncProj();let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const q of P.r.pts){if(!onFace(q[0],q[1]))continue;const p=proj(q);x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1])}
+    if(x1<x0){const m=routeAt(P.r,.5);view.lon=m[0];view.lat=m[1];continue}
+    const k=Math.min((W-110)/Math.max(1,x1-x0),(bot-top-50)/Math.max(1,y1-y0));const c=proj.invert([W/2+((x0+x1)/2-cx),focusY()+((y0+y1)/2-cy)]);if(c){view.lon=c[0];view.lat=clamp(c[1],-80,80)}view.z=Math.max(minZ,Math.min(view.z*Math.pow(k,.7),600))}
+  syncProj();needsDraw=true}
+function plTag(x,y,txt,bg){ctx.font='700 12.5px Fredoka, Nunito, sans-serif';const tw=ctx.measureText(txt).width+20;rrect(x-tw/2,y-11,tw,22,11);ctx.fillStyle=bg||PL_SUN;ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=PL_INK;ctx.stroke();ctx.fillStyle=bg===PL_RED?'#fff':PL_INK;ctx.textAlign='center';ctx.fillText(txt,x,y+4.5);ctx.textAlign='left'}
+function plHandle(x,y,on){ctx.save();if(on){ctx.beginPath();ctx.arc(x,y,30,0,7);ctx.fillStyle='rgba(255,255,255,.35)';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='rgba(38,48,74,.35)';ctx.stroke()}
+  ctx.beginPath();ctx.arc(x,y,15,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=3;ctx.strokeStyle=PL_INK;ctx.stroke();ctx.fillStyle=PL_INK;
+  for(let q=0;q<4;q++){ctx.save();ctx.translate(x,y);ctx.rotate(q*Math.PI/2);ctx.beginPath();ctx.moveTo(0,-11);ctx.lineTo(-4,-6);ctx.lineTo(4,-6);ctx.closePath();ctx.fill();ctx.restore()}
+  ctx.beginPath();ctx.arc(x,y,3,0,7);ctx.fill();ctx.restore()}
+function drawPlan(now){
+  const P=PLAN,b=me&&me.booking;if(!b||b.key!==P.b.key||now>=P.b.dep){closePlanner();toast('Your flight is leaving');return}
+  const r=P.r,A=AP[b.o],B=AP[b.d],t=myTpl(b);
+  if(P.wp.length){const g=[];for(let i=0;i<=80;i++)g.push(pt(A,B,i/80));strokeLL(g,'rgba(255,255,255,.75)',2.5,[3,9])}
+  strokeLL(r.pts,PL_INK,9);strokeLL(r.pts,PL_SUN,5);
+  // stretches of the route that pass through rain bad enough to feel: orange bumpy, red severe
+  let run=null,rc=null;const flush=()=>{if(run&&run.length>1)strokeLL(run,rc,5);run=null};
+  for(let i=1;i<r.pts.length;i++){const v=Math.max(P.sev[i-1],P.sev[i]),c=v>=.7?PL_RED:v>=.44?'#ff9a3c':null;if(c!==rc)flush();rc=c;if(c){if(!run)run=[r.pts[i-1]];run.push(r.pts[i])}}flush();
+  const L=PLANE_PX*1.2*planeSize(t.type),kd=planeKind(t.type);
+  // your plane at the gate
+  {const q=r.pts[0],n=routeAt(r,.02);if(onFace(q[0],q[1])){const xy=proj(q),a=proj(n),ang=Math.atan2(a[1]-xy[1],a[0]-xy[0])+Math.PI/2;drawJet(xy[0],xy[1],ang,L,kd,t.al,0,1,PL_SUN);plTag(xy[0],xy[1]-L*.62-14,b.id)}}
+  // the ghost: where you'll be at the forecast time
+  if(P.TT>0){const p=flightState(t,b.dep,b.dep+P.TT*MIN).p,q=routeAt(r,p),n=routeAt(r,Math.min(1,p+.01));if(onFace(q[0],q[1])){const xy=proj(q),a=proj(n),ang=Math.atan2(a[1]-xy[1],a[0]-xy[0])+Math.PI/2;
+    drawJet(xy[0],xy[1],ang,L,kd,t.al,0,.75);ctx.save();ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(xy[0],xy[1],L*.62,0,7);ctx.lineWidth=2;ctx.strokeStyle='rgba(38,48,74,.6)';ctx.stroke();ctx.restore();
+    plTag(xy[0],xy[1]+L*.62+16,'+'+plFmt(P.TT),'#fff')}}
+  if(P.bad>=0&&!P.grab){const q=r.pts[P.bad];if(onFace(q[0],q[1])){const [x,y]=proj(q);plTag(x+60,y-16,'Storm at +'+plFmt(P.tm[P.bad]),PL_RED)}}
+  const hs=P.wp.length?P.wp.map(v=>{const n=Math.hypot(...v);return [Math.atan2(v[1],v[0])/rad,Math.asin(v[2]/n)/rad]}):[routeAt(r,.5)];
+  hs.forEach((q,i)=>{if(!onFace(q[0],q[1]))return;const [x,y]=proj(q),on=P.grab&&P.grab.wp===i;plHandle(x,y,on);
+    if(on)plTag(x,y-44,(P.stats.detour?`+${P.stats.detour.toLocaleString('en')} km · `:'')+P.stats.ride,P.stats.ride==='Severe'?PL_RED:PL_SUN)});
+}
+// grab a point to move it, grab the line to add a bend, tap a point to remove it
+function plNear(x,y){const P=PLAN;for(let i=0;i<P.wp.length;i++){const v=P.wp[i],n=Math.hypot(...v),q=[Math.atan2(v[1],v[0])/rad,Math.asin(v[2]/n)/rad];if(!onFace(q[0],q[1]))continue;const p=proj(q);if(Math.hypot(p[0]-x,p[1]-y)<30)return {wp:i}}
+  if(P.wp.length>=PL_MAXWP)return null;const pts=P.r.pts,lo=Math.round(pts.length*.05),hi=Math.round(pts.length*.95);let best=null;
+  for(let i=lo;i<=hi;i++){const q=pts[i];if(!onFace(q[0],q[1]))continue;const p=proj(q),d=Math.hypot(p[0]-x,p[1]-y);if(!best||d<best.d)best={i,d}}
+  return best&&best.d<32?{ins:P.r.seg[best.i],q:pts[best.i]}:null}
+addEventListener('pointerdown',e=>{if(!PLAN||e.target!==cv)return;const h=plNear(e.clientX,e.clientY);if(!h)return;const P=PLAN;
+  if(h.ins!=null){P.wp.splice(h.ins,0,vec(h.q[1],h.q[0]));P.grab={wp:h.ins,x:e.clientX,y:e.clientY,moved:true};plEval()}else P.grab={wp:h.wp,x:e.clientX,y:e.clientY,moved:false};
+  e.stopImmediatePropagation();e.preventDefault();needsDraw=true},true);
+addEventListener('pointermove',e=>{const P=PLAN;if(!P||!P.grab)return;e.stopImmediatePropagation();e.preventDefault();if(Math.hypot(e.clientX-P.grab.x,e.clientY-P.grab.y)>6)P.grab.moved=true;if(!P.grab.moved)return;
+  const ll=proj.invert([e.clientX,e.clientY]);if(!ll||!onFace(ll[0],ll[1]))return;P.wp[P.grab.wp]=vec(ll[1],ll[0]);plEval()},true);
+const plEnd=e=>{const P=PLAN;if(!P||!P.grab)return;e.stopImmediatePropagation();e.preventDefault();const g=P.grab;P.grab=null;if(!g.moved)P.wp.splice(g.wp,1);plEval()};
+addEventListener('pointerup',plEnd,true);addEventListener('pointercancel',plEnd,true);
+
 let lastDraw=0,wasMoving=false;
 function loop(){
   const now=Date.now();
@@ -3739,6 +3919,7 @@ let CTRY=null,selRoute=null,avoidBoxes=[];
 function countryAt(lon,lat){if(!CTRY)return 0;const x=Math.floor((lon+180)/360*CTRY.w)%CTRY.w,y=clamp(Math.floor((90-lat)/180*CTRY.h),0,CTRY.h-1);return CTRY.a[y*CTRY.w+x]}
 const flagOf=iso=>iso&&iso.length===2?String.fromCodePoint(...[...iso.toUpperCase()].map(c=>127397+c.charCodeAt(0))):'';
 function tapAt(x,y){
+  if(PLAN)return;
   let best=null,bd=1e9;
   for(const h of hits){let d=Math.hypot(h.x-x,h.y-y)-h.pri*3;
     // an airport's name is tappable too
