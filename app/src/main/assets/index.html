@@ -590,6 +590,13 @@ body.planning #nav,body.planning #sheet,body.planning #rail,body.planning #card{
 #plan .tl{display:flex;align-items:center;gap:10px;margin:2px 0 12px}#plan .tl button{width:40px;height:40px;flex:none;border-radius:50%;border:2px solid var(--ink);background:#ffd23f;box-shadow:0 3px 0 var(--ink);display:grid;place-items:center}
 #plan .tl input{flex:1;accent-color:#ff8a1f;height:28px}#plan .tl b{font-family:var(--disp);font-weight:600;font-size:15px;min-width:76px;text-align:right}
 #plan .foot{font-size:12.5px;color:var(--muted);margin-top:10px;font-weight:700}
+
+/* tropical cyclone info pill */
+#stormPill{position:fixed;left:0;top:0;z-index:7;max-width:290px;background:#fff;border:2px solid var(--ink);border-radius:18px;box-shadow:0 4px 0 var(--ink);padding:9px 14px 10px;color:var(--text);pointer-events:none}
+#stormPill .sp1{display:flex;align-items:center;gap:8px}#stormPill .sp1 i{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);flex:none}
+#stormPill b{font-family:var(--disp);font-weight:600;font-size:17px;line-height:21px}
+#stormPill .sp2{font-size:13px;font-weight:700;margin-top:3px}#stormPill .sp3{font-size:12px;font-weight:700;color:var(--muted);margin-top:3px}
+body.page #stormPill,body.planning #stormPill{display:none}
 </style>
 </head>
 <body>
@@ -3268,8 +3275,8 @@ void main(){
     float hs=sign(c.z);vec3 N=cross(c.xyz,e.xyz);
     float x=dot(P,e.xyz)*ER+(n2-.5)*50.,y=dot(P,N)*ER*hs+(n1-.5)*50.,r=max(length(vec2(x,y)),1.),ang=atan(y,x);
     float wall=g1(r-48.,22.),arms=pow(.5+.5*cos(2.*ang+2.6*log(r/48.)),1.6)*exp(-r/(Rk*.95))*smoothstep(40.,90.,r);
-    float eye=smoothstep(16.,28.,r),core=(1.-smoothstep(Rk*.18,Rk*.45,r))*.5;
-    I=max(I,c.w*eye*max(wall*1.08,max(core,arms*1.15)*mix(.45,1.15,smoothstep(.3,.8,cell))));
+    float eye=smoothstep(16.,28.,r),core=(1.-smoothstep(Rk*.22,Rk*.58,r))*.58;
+    I=max(I,c.w*eye*max(wall*1.08,max(core,arms*1.4)*mix(.45,1.15,smoothstep(.3,.8,cell))));
     C=max(C,c.w*eye*max(1.-smoothstep(Rk*.5,Rk*.85,r),arms*1.8+.35*exp(-r/Rk)));}
   I*=smoothstep(.42,.6,C);                              // no rain falls from a clear sky
   I=max(0.,I*(.72+.56*dt)-.05);                          // ragged edges, like real radar
@@ -3366,6 +3373,14 @@ const wxDd=(a,b)=>{const d=Math.abs(a-b)%365.25;return Math.min(d,365.25-d)};
 function wxActivity(b,doy){const pk=Array.isArray(b.peak)?b.peak:[b.peak];return Math.min(1,b.base+b.max*Math.max(...pk.map(p=>Math.exp(-((wxDd(doy,p)/b.wid)**2)))))}
 function wxFrame(lat,lon,rot){const C=vec(lat,lon),l=lon*rad,p=lat*rad,E=[-Math.sin(l),Math.cos(l),0],N=[-Math.sin(p)*Math.cos(l),-Math.sin(p)*Math.sin(l),Math.cos(p)],c=Math.cos(rot),s=Math.sin(rot);
   return {C,E:[E[0]*c+N[0]*s,E[1]*c+N[1]*s,E[2]*c+N[2]*s]}}
+const WX_LC=216;
+// the storm a basin's slot makes in cycle n, at a given age in hours (null if that cycle makes none)
+function wxTcAt(bi,s,n,age){const b=WX_BASINS[bi],off=s*WX_LC/2+bi*31,r=k=>wxH(bi*5+s,n,k,9),born=(off+n*WX_LC)*3600000;
+  if(r(1)>wxActivity(b,wxDoy(born))*.8)return null;
+  const life=b.re?156:100,u=age/24;if(age<0||age>life)return null;const ur=3.4+r(2)*1.6,k=Math.max(0,u-ur)*b.re,hs=Math.sign(b.lat);
+  const lat=b.lat+(r(3)-.5)*4+b.vy*u+hs*.9*k*k,lon=((b.lon+(r(4)-.5)*14+b.vx*u+2.4*k*k+540)%360)-180;
+  const I=(Math.min(1,u/1.5)**1.5)*(1-Math.max(0,Math.min(1,(age-(life-36))/36)))*(.65+.35*r(5))*(1-Math.max(0,Math.min(1,(Math.abs(lat)-28)/10)));
+  return {lat,lon,R:380+200*r(6),I,basin:bi,s,n,born,age,life}}
 function wxState(ms){
   const t=ms/3600000,doy=wxDoy(ms),sg=Math.sin(2*Math.PI*(doy-80)/365.25),utc=((t%24)+24)%24;
   // two cross-fading copies of each moving noise field (fast storm cells, slow weather clusters)
@@ -3381,12 +3396,7 @@ function wxState(ms){
     cy.push({lat,lon,R:650+500*Math.min(1,age/(Lp*.5))+r(7)*200,I,rot:(r(8)-.5)*.6})}
   // tropical cyclones: a basin may or may not produce one each cycle, depending on the season
   const tc=[];
-  WX_BASINS.forEach((b,bi)=>{for(let s=0;s<2;s++){const Lc=216,off=s*Lc/2+bi*31,tt=t-off,n=Math.floor(tt/Lc),age=tt-n*Lc,r=k=>wxH(bi*5+s,n,k,9);
-    const born=ms-age*3600000;if(r(1)>wxActivity(b,wxDoy(born))*.8)continue;
-    const life=b.re?156:100,u=age/24;if(age>life)continue;const ur=3.4+r(2)*1.6,k=Math.max(0,u-ur)*b.re,hs=Math.sign(b.lat);
-    const lat=b.lat+(r(3)-.5)*4+b.vy*u+hs*.9*k*k,lon=((b.lon+(r(4)-.5)*14+b.vx*u+2.4*k*k+540)%360)-180;
-    const I=(Math.min(1,u/1.5)**1.5)*(1-Math.max(0,Math.min(1,(age-(life-36))/36)))*(.65+.35*r(5))*(1-Math.max(0,Math.min(1,(Math.abs(lat)-28)/10)));
-    if(I>.03)tc.push({lat,lon,R:380+200*r(6),I,basin:bi})}});
+  WX_BASINS.forEach((b,bi)=>{for(let s=0;s<2;s++){const off=s*WX_LC/2+bi*31,tt=t-off,n=Math.floor(tt/WX_LC),st=wxTcAt(bi,s,n,tt-n*WX_LC);if(st&&st.I>.03)tc.push(st)}});
   tc.sort((a,b)=>b.I-a.I);
   return {sg,utc,FA,FB,SA,SB,cy,tc:tc.slice(0,6)}}
 // the same weather in JavaScript, for checking a route against the forecast (mirrors WXFS; the hash runs in 32-bit floats like the GPU)
@@ -3448,8 +3458,8 @@ function wxSample(la,lo,ms,uR=300){
   for(const c of S.tcF){if(c.I<=.01)continue;const Rk=c.R;if(dot(P,c.C)<Math.cos(2.6*Rk/6371))continue;const hs=Math.sign(c.C[2]);
     const x=dot(P,c.E)*6371+(n2-.5)*50,y=dot(P,c.N)*6371*hs+(n1-.5)*50,r=Math.max(Math.hypot(x,y),1),ang=Math.atan2(y,x);
     const wall=wxG1(r-48,22),arms=Math.pow(.5+.5*Math.cos(2*ang+2.6*Math.log(r/48)),1.6)*Math.exp(-r/(Rk*.95))*wxSS(40,90,r);
-    const eye=wxSS(16,28,r),core=(1-wxSS(Rk*.18,Rk*.45,r))*.5;
-    I=Math.max(I,c.I*eye*Math.max(wall*1.08,Math.max(core,arms*1.15)*wxMix(.45,1.15,wxSS(.3,.8,cell))));
+    const eye=wxSS(16,28,r),core=(1-wxSS(Rk*.22,Rk*.58,r))*.58;
+    I=Math.max(I,c.I*eye*Math.max(wall*1.08,Math.max(core,arms*1.4)*wxMix(.45,1.15,wxSS(.3,.8,cell))));
     C=Math.max(C,c.I*eye*Math.max(1-wxSS(Rk*.5,Rk*.85,r),arms*1.8+.35*Math.exp(-r/Rk)))}
   I*=wxSS(.42,.6,C);I=Math.max(0,I*(.72+.56*dt)-.05);
   const sl=55+Math.sign(la)*10*sg+(1-land)*11;let snow=wxSS(sl-3,sl+3,Math.abs(la));snow=Math.max(snow,wxEll(la,lo,33,88,5,13)*.9);
@@ -3701,6 +3711,7 @@ function draw(){
     if(lab)apLabelOps.push({bx:[x-8,y-11,x+16+(a._lw||60),y+10],fn:()=>{ctx.font=`${a.code===here?600:500} ${a.tier===1||a.code===here?14:12.5}px Fredoka, Nunito, -apple-system, sans-serif`;ctx.lineJoin='round';ctx.lineWidth=3.5;ctx.strokeStyle='#26304a';ctx.strokeText(a.city,x+11,y+4.6);ctx.fillStyle='#fff';ctx.fillText(a.city,x+11,y+4.6)}});
     hits.push({x,y,r:14,kind:'airport',code:a.code,pri:0,box:lab?[x+6,y-11,x+16+(a._lw||60),y+11]:null});
   }
+  drawStorms();
   // coins waiting along my route (drawn first, so planes sit on top of them)
   if(st==='flying'||st==='booked'){const b=me.booking,s=st==='flying'?myFS(b,now):{p:0,lon:AP[b.o].lon,lat:AP[b.o].lat},A=AP[b.o],B=AP[b.d],r=7;
     const ca=me.booking.tut?1:ss(COIN_Z0,COIN_Z1,z);
@@ -3865,6 +3876,99 @@ addEventListener('pointermove',e=>{const P=PLAN;if(!P||!P.grab)return;e.stopImme
 const plEnd=e=>{const P=PLAN;if(!P||!P.grab)return;e.stopImmediatePropagation();e.preventDefault();const g=P.grab;P.grab=null;if(!g.moved)P.wp.splice(g.wp,1);plEval()};
 addEventListener('pointerup',plEnd,true);addEventListener('pointercancel',plEnd,true);
 
+/* ---------- named tropical cyclones: each ocean follows its real-world naming and strength rules (names are invented) ---------- */
+const STORM_F={A:'Aveline Amaris Anouk Alessia Arwenna Aurelie',B:'Brisa Bellamy Bettina Blythe Brenna Bryony',C:'Calla Cosima Celestine Clio Corinne Cassia',D:'Delphine Dara Delia Dorit Dagny Dalia',
+  E:'Elodie Esme Eira Elspeth Eloise Edda',F:'Fenna Freya Florine Fiora Farrah Fiorella',G:'Greta Gwenna Gilly Giselle Galina Ginevra',H:'Hester Halle Hana Helka Hedda Honora',I:'Ilse Ines Isolde Iolanthe Imara Ilka',
+  J:'Juniper Jessa Jolie Juno Jovana Jemima',K:'Kaia Kestrel Kalinda Kirsi Keziah Klara',L:'Lumi Linnea Leona Lark Liesl Lorna',M:'Marisol Maren Mila Mireille Merritt Maeve',N:'Nell Noor Nadia Neve Noemi Nerys',
+  O:'Odalys Oona Orla Ottilie Oriel Odile',P:'Pia Pernille Philippa Petra Posy Priya',R:'Rosalind Rhea Ramona Romy Reva Rowena',S:'Saoirse Sabine Selka Sigrid Solenne Suki',T:'Tamsin Tova Thea Talia Tindra Tess',
+  V:'Vesna Verity Vida Valka Viola Vivienne',W:'Wren Wilona Winnie Waverly Wilhelmina Wynne',X:'Xanthe Xenia Ximena Xara Xiomara Xylia',Y:'Yara Ysolde Yelena Yuna Yvaine Ylva',Z:'Zinnia Zora Zelie Zia Zuzana Zenobia'};
+const STORM_M={A:'Alder Anselm Arlo Ambrose Auden Aric',B:'Basil Bram Benedek Bastien Bodhi Byron',C:'Caspian Cyrus Corwin Callum Cassius Cormac',D:'Dorwin Dashiell Desmond Darius Dov Declan',
+  E:'Emrys Ezio Elio Edmund Evander Ewan',F:'Fenwick Falk Florian Fintan Falco Ferris',G:'Gideon Gunnar Garrick Gael Gordy Griffin',H:'Hollis Hollan Hamish Halvard Hedwin Hiram',I:'Ivor Idris Ignatius Ilan Ira Ivar',
+  J:'Jarvis Joaquin Jory Jareth Jonas Jude',K:'Kasimir Kieran Knox Konrad Kit Kael',L:'Lachlan Leif Lucan Linus Lorcan Lev',M:'Magnus Milo Matthias Marlow Mateo Merrick',N:'Nico Niall Nestor Nils Nolan Nevin',
+  O:'Orrin Osmund Oberon Odell Osric Ottar',P:'Pascal Piers Percival Pavel Peregrin Pax',R:'Rafferty Ronan Rasmus Remy Rupert Rocco',S:'Silas Soren Stellan Severin Sacha Sully',T:'Thaddeus Tobias Teodor Torin Tycho Tiago',
+  V:'Valen Viggo Vaughn Vasco Vidar Virgil',W:'Wolfe Wendell Wystan Warrick Wilder Wim',X:'Xander Xavi Xeno Xerxes Xan Xylon',Y:'Yannick Yuri Yorick Yves Yosef Yarrow',Z:'Zeno Zoltan Zander Zev Zephyr Zane'};
+const ST_L21='ABCDEFGHIJKLMNOPRSTVW',ST_L24='ABCDEFGHIJKLMNOPRSTVWXYZ';
+// people's names, alphabetical, alternating female and male
+function stPerson(letters,idx,variant,startF){const L=letters[idx%letters.length],v=(variant+Math.floor(idx/letters.length))%6,fem=(idx+startF)%2===0;return (fem?STORM_F:STORM_M)[L].split(' ')[v]}
+// word names, contributed in turn by the countries round the basin and used in order
+const ST_SYL={wp:'ka lo mai sa to ha na ri bu yen lin hai mo pa son tai ku wa lan dao rin jin po seo mu chi ten ya ho nam'.split(' '),
+  ni:'ar na vi sa ti ma ru ka li ya dhi va shi ni ra han zar mi dra so bel tu ash pri'.split(' ')};
+const ST_WORDS={};
+function stWord(kind,idx){let L=ST_WORDS[kind];if(!L){L=ST_WORDS[kind]=[];const S=ST_SYL[kind],seen=new Set,want=kind==='wp'?140:169;
+    for(let j=0;L.length<want&&j<5000;j++){const h=k=>wxH(j,kind==='wp'?71:73,k,13);let w='';const n=h(0)<.55?2:3;
+      for(let i=0;i<n;i++){const sy=S[Math.floor(h(i+1)*S.length)];if(w.length+sy.length>8)break;w+=sy}if(w.length<4)w+=S[Math.floor(h(9)*S.length)];
+      w=w[0].toUpperCase()+w.slice(1);if(!seen.has(w)){seen.add(w);L.push(w)}}}
+  return L[idx%L.length]}
+const ST_NUM='Zero One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve Thirteen Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen Twenty Twenty-One Twenty-Two Twenty-Three Twenty-Four Twenty-Five Twenty-Six Twenty-Seven Twenty-Eight Twenty-Nine Thirty'.split(' ');
+const pad2=n=>String(n).padStart(2,'0');
+// basin index → its rules: where it is, when its season starts, whether its name list restarts each season
+const ST_RULES=[
+  {area:'Western Pacific',season:'year',reset:false,name:i=>stWord('wp',i%140),dep:n=>`Tropical Depression ${pad2(n)}W`},
+  {area:'Bay of Bengal',season:'year',reset:false,name:i=>stWord('ni',i%169),dep:n=>`Depression BOB ${pad2(n)}`},
+  {area:'South-west Indian Ocean',season:'july',reset:true,name:(i,y)=>stPerson(ST_L21,i,(y+1)%6,y%2),dep:n=>`Tropical Disturbance ${pad2(n)}`},
+  {area:'Australian region',season:'july',reset:false,name:i=>stPerson(ST_L21,i,2,0),dep:n=>`Tropical Low ${pad2(n)}U`},
+  {area:'South Pacific',season:'july',reset:false,name:i=>stPerson(ST_L21,i,4,1),dep:n=>`Tropical Disturbance ${pad2(n)}F`},
+  {area:'North Atlantic',season:'year',reset:true,name:(i,y)=>stPerson(ST_L21,i,y%6,y%2),dep:n=>`Tropical Depression ${ST_NUM[n]||n}`},
+  {area:'Eastern Pacific',season:'year',reset:true,name:(i,y)=>stPerson(ST_L24,i,(y+3)%6,(y+1)%2),dep:n=>`Tropical Depression ${ST_NUM[n]||n}-E`}];
+const ST_EPOCH=Date.UTC(2020,0,1),ST_CACHE=new Map();
+const stSeasonStart=(rule,ms)=>{const d=new Date(ms),y=d.getUTCFullYear();if(rule.season==='year')return [Date.UTC(y,0,1),y];const j=Date.UTC(y,6,1);return ms>=j?[j,y]:[Date.UTC(y-1,6,1),y-1]};
+// storms a basin forms between two times, in the order they formed
+function stFormed(bi,t0,t1){const out=[],b=WX_BASINS[bi];
+  for(let s=0;s<2;s++){const off=s*WX_LC/2+bi*31,n0=Math.ceil((t0/3600000-off)/WX_LC),n1=Math.floor((t1/3600000-off)/WX_LC);
+    for(let n=n0;n<=n1;n++){const born=(off+n*WX_LC)*3600000;if(born<t0||born>=t1)continue;if(wxH(bi*5+s,n,1,9)>wxActivity(b,wxDoy(born))*.8)continue;out.push({s,n,born})}}
+  return out.sort((a,b)=>a.born-b.born||a.s-b.s)}
+function stIdent(st){const key=st.basin+'-'+st.s+'-'+st.n;let id=ST_CACHE.get(key);if(id)return id;
+  const rule=ST_RULES[st.basin],[ss,sy]=stSeasonStart(rule,st.born),before=x=>x.born<st.born||(x.born===st.born&&x.s<st.s);
+  const num=stFormed(st.basin,ss,st.born+1).filter(before).length+1;
+  const nameIdx=rule.reset?num-1:stFormed(st.basin,ST_EPOCH,st.born+1).filter(before).length;
+  id={key,name:rule.name(nameIdx,sy),dep:rule.dep(num),area:rule.area};if(ST_CACHE.size>200)ST_CACHE.clear();ST_CACHE.set(key,id);return id}
+// strength in knots, and what each basin calls a storm that strong
+const stKt=I=>15+Math.pow(Math.max(0,I),1.8)*140;
+function stClass(bi,kt){const A=bi===5||bi===6,cat=kt>=137?5:kt>=113?4:kt>=96?3:kt>=83?2:1;
+  if(A)return kt<34?['Tropical Depression','Tropical depression',0]:kt<64?['Tropical Storm','Tropical storm',1]:['Hurricane',`Category ${cat}${cat>=3?' · major':''}`,1+cat];
+  if(bi===0)return kt<34?['Tropical Depression','Tropical depression',0]:kt<48?['Tropical Storm','Tropical storm',1]:kt<64?['Severe Tropical Storm','Severe tropical storm',2]:kt<85?['Typhoon','Typhoon',3]:kt<105?['Typhoon','Very strong typhoon',4]:['Typhoon','Violent typhoon',5];
+  if(bi===1)return kt<28?['Depression','Depression',0]:kt<34?['Deep Depression','Deep depression',0]:kt<48?['Cyclonic Storm','Cyclonic storm',1]:kt<64?['Cyclone','Severe cyclonic storm',2]:kt<90?['Cyclone','Very severe cyclonic storm',3]:kt<120?['Cyclone','Extremely severe cyclonic storm',4]:['Super Cyclone','Super cyclonic storm',5];
+  if(bi===2)return kt<34?['Tropical Depression','Tropical depression',0]:kt<48?['Tropical Storm','Moderate tropical storm',1]:kt<64?['Tropical Storm','Severe tropical storm',2]:kt<90?['Tropical Cyclone','Tropical cyclone',3]:kt<116?['Intense Tropical Cyclone','Intense tropical cyclone',4]:['Very Intense Tropical Cyclone','Very intense tropical cyclone',5];
+  const c=kt>=108?5:kt>=86?4:kt>=64?3:kt>=48?2:1;   // Australian scale, also used round Fiji
+  return kt<34?[bi===3?'Tropical Low':'Tropical Depression',bi===3?'Tropical low':'Tropical depression',0]:[c>=3?'Severe Tropical Cyclone':'Tropical Cyclone',`Category ${c}`,c]}
+const ST_COL=['#8fa3bf','#2fb3a0','#ffd23f','#ff9a3c','#e5484d','#b23cc8'];
+const ST_DIR='north,north-northeast,northeast,east-northeast,east,east-southeast,southeast,south-southeast,south,south-southwest,southwest,west-southwest,west,west-northwest,northwest,north-northwest'.split(',');
+// everything the info pill shows about one storm at a moment
+function stInfo(st){const id=stIdent(st),kt=stKt(st.I),[title,cls,lv]=stClass(st.basin,kt),peak=Math.min(36,st.life/2);
+  const named=kt>=34||st.age>peak,label=!named?id.dep:kt<34?`Remnants of ${id.name}`:`${title} ${id.name}`;
+  const a=wxTcAt(st.basin,st.s,st.n,Math.max(0,st.age-1)),b=wxTcAt(st.basin,st.s,st.n,Math.min(st.life,st.age+1));
+  let move='';if(a&&b){const km=gdist(a,b),dh=Math.min(st.life,st.age+1)-Math.max(0,st.age-1),y=Math.sin((b.lon-a.lon)*rad)*Math.cos(b.lat*rad),x=Math.cos(a.lat*rad)*Math.sin(b.lat*rad)-Math.sin(a.lat*rad)*Math.cos(b.lat*rad)*Math.cos((b.lon-a.lon)*rad);
+    const br=(Math.atan2(y,x)/rad+360)%360;move=`Heading ${ST_DIR[Math.round(br/22.5)%16]} at ${Math.round(km/dh)} km/h`}
+  return {id,label,short:named?id.name:(r=>/^[A-Z][a-z]/.test(r)?'TD '+r:r)(id.dep.replace(/^(Tropical |Deep )?(Depression|Disturbance|Low) /,'')),cls,lv,kmh:Math.round(kt*1.852/5)*5,hpa:Math.round(1010-.024*Math.pow(Math.max(20,kt),1.696)),move,area:id.area,ageH:st.age}}
+let stormSel=null;
+const stNow=()=>wxStateAt(wxForceMs??Date.now()).tc.filter(t=>t.I>.06);
+function drawStorms(){
+  if(!GL||!WXP||!(showRain||showClouds))return;
+  for(const st of stNow()){if(!onFace(st.lon,st.lat))continue;const [x,y]=proj([st.lon,st.lat]);if(x<-60||x>W+60||y<-40||y>H+40)continue;
+    const inf=stInfo(st),col=ST_COL[inf.lv],sh=st.lat<0,sel=stormSel===inf.id.key,spx=st.R/6371*R();
+    if(spx>55){const tx=x+spx*.42;ctx.font='700 12px Fredoka, Nunito, sans-serif';const tw=ctx.measureText(inf.short).width+30;rrect(tx,y-11,tw,22,11);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=PL_INK;ctx.stroke();
+      ctx.beginPath();ctx.arc(tx+12,y,5,0,7);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2;ctx.stroke();ctx.fillStyle=PL_INK;ctx.fillText(inf.short,tx+22,y+4.5);
+      if(!PLAN)hits.push({x,y,r:Math.min(spx*.35,60),kind:'storm',key:inf.id.key,pri:0,box:[tx,y-11,tx+tw,y+11]});avoidBoxes.push([tx,y-12,tx+tw,y+12]);continue}
+    // the storm symbol: a filled eye with two curled arms (mirrored in the southern hemisphere, where storms spin the other way)
+    ctx.save();ctx.translate(x,y);ctx.scale(sh?-1:1,1);ctx.lineCap='round';
+    for(const pass of [[PL_INK,6.5],[col,3.2]]){ctx.strokeStyle=pass[0];ctx.lineWidth=pass[1];ctx.beginPath();ctx.moveTo(0,-7);ctx.quadraticCurveTo(9,-9,12,-17);ctx.moveTo(0,7);ctx.quadraticCurveTo(-9,9,-12,17);ctx.stroke()}
+    ctx.beginPath();ctx.arc(0,0,sel?8.5:7,0,7);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle=PL_INK;ctx.stroke();
+    ctx.beginPath();ctx.arc(0,0,2.6,0,7);ctx.fillStyle='#fff';ctx.fill();ctx.restore();
+    ctx.font='700 12px Fredoka, Nunito, sans-serif';const tw=ctx.measureText(inf.short).width+16;rrect(x+16,y-10,tw,20,10);ctx.fillStyle='#fff';ctx.fill();ctx.lineWidth=2;ctx.strokeStyle=PL_INK;ctx.stroke();
+    ctx.fillStyle=PL_INK;ctx.fillText(inf.short,x+24,y+4);
+    if(!PLAN)hits.push({x,y,r:24,kind:'storm',key:inf.id.key,pri:0,box:[x+16,y-10,x+16+tw,y+10]});
+    avoidBoxes.push([x-14,y-18,x+16+tw,y+18])}
+  stormPill()}
+// the info pill floats above the storm you tapped and follows it as the map moves
+function stormPill(){let el=$('stormPill');const st=stormSel&&stNow().find(t=>stIdent(t).key===stormSel);
+  if(!st||PLAN||!(showRain||showClouds)){if(el)el.remove();if(stormSel&&!st)stormSel=null;return}
+  const inf=stInfo(st);if(!el){el=document.createElement('div');el.id='stormPill';document.body.appendChild(el)}
+  const days=inf.ageH/24,age=days<1?`${Math.max(1,Math.round(inf.ageH))} h old`:`${Math.round(days*10)/10} days old`;
+  const html=`<div class="sp1"><i style="background:${ST_COL[inf.lv]}"></i><b>${esc(inf.label)}</b></div><div class="sp2">${esc(inf.cls)} · ${inf.kmh} km/h · ${inf.hpa} hPa</div>${inf.move?`<div class="sp2">${inf.move}</div>`:''}<div class="sp3">${esc(inf.area)} · ${age}</div>`;
+  if(el._h!==html){el.innerHTML=html;el._h=html}
+  const [x,y]=proj([st.lon,st.lat]),w=el.offsetWidth,h=el.offsetHeight,top=y-h-30<70?y+30:y-h-30;
+  el.style.transform=`translate(${Math.round(clamp(x-w/2,10,W-w-10))}px,${Math.round(top)}px)`}
+
 let lastDraw=0,wasMoving=false;
 function loop(){
   const now=Date.now();
@@ -3937,6 +4041,9 @@ function tapAt(x,y){
     // an airport's name is tappable too
     if(h.box&&x>=h.box[0]&&x<=h.box[2]&&y>=h.box[1]&&y<=h.box[3])d=Math.min(d,h.r-1);
     if(d<h.r&&d<bd){bd=d;best=h}}
+  // storms: a tap opens the info pill; a tap anywhere else closes it first
+  if(best&&best.kind==='storm'){stormSel=best.key;if(selected){selected=null;renderCard()}stormPill();needsDraw=true;return}
+  if(stormSel){stormSel=null;stormPill();needsDraw=true;if(!best)return}
   if(!best){
     // tapped land: show that country
     const ll=proj.invert([x,y]);let id=0;
