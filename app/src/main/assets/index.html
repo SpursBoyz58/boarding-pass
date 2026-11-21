@@ -3182,7 +3182,7 @@ uniform vec2 uC2,uRes;uniform float uR,uSeason,uUTC;uniform vec3 uCv,uEv,uNv;
 uniform vec4 uFA,uFB,uSA,uSB;            // fast and slow flow layers: (age h, weight, seed, -)
 uniform vec4 uCy[24],uCyE[24];           // mid-latitude lows: (centre, strength) (east axis, radius km)
 uniform vec4 uTc[6],uTcE[6];             // tropical cyclones: same layout
-uniform sampler2D tWater;
+uniform sampler2D tWater,tWind;uniform float uWindOn;
 out vec4 o;
 const float PI=3.14159265359,ER=6371.;
 float h31(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
@@ -3192,6 +3192,11 @@ float vn(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);
 float g1(float x,float w){return exp(-x*x/(w*w));}
 // prevailing winds carry the weather: easterly trades, westerlies in the mid-latitudes, polar easterlies
 vec3 advect(vec3 P,float lat,float age){
+  if(uWindOn>.5){float rxy=length(P.xy);if(rxy<1e-4)return P;
+    float la=lat*57.2958,lo=atan(P.y,P.x)*57.2958;
+    vec2 w=texture(tWind,vec2(((lo+180.)*.5+.5)/180.,((la+90.)*.5+.5)/91.)).rg*.55;
+    vec3 E=vec3(-P.y,P.x,0.)/rxy,N=cross(P,E);vec2 d=-w*age/ER;float m=length(d);if(m<1e-7)return P;
+    return P*cos(m)+(E*d.x+N*d.y)*(sin(m)/m);}
   float al=abs(lat)*57.2958,u=-6.5*g1(al,15.)+14.*g1(al-46.,13.)-3.*g1(al-75.,8.);   // m/s
   float a=-u*3.6*age/(ER*max(cos(lat),.2));float c=cos(a),s=sin(a);
   return vec3(P.x*c-P.y*s,P.x*s+P.y*c,P.z);}
@@ -3383,17 +3388,25 @@ function wxTcAt(bi,s,n,age){const b=WX_BASINS[bi],off=s*WX_LC/2+bi*31,r=k=>wxH(b
   const lat=b.lat+(r(3)-.5)*4+b.vy*u+hs*.9*k*k,lon=((b.lon+(r(4)-.5)*14+b.vx*u+2.4*k*k+540)%360)-180;
   const I=(Math.min(1,u/1.5)**1.5)*(1-Math.max(0,Math.min(1,(age-(life-36))/36)))*(.65+.35*r(5))*(1-Math.max(0,Math.min(1,(Math.abs(lat)-28)/10)));
   return {lat,lon,R:380+200*r(6),I,basin:bi,s,n,born,age,life}}
+// the large-scale steering flow at a latitude and longitude (no storms or eddies in it, so storms can be steered by it)
+function wxSteer(la,lo,sg){let u=0;const G=(x,w)=>Math.exp(-x*x/(w*w)),wr=a=>((a+540)%360)-180;
+  for(const h of [1,-1]){const w=Math.min(1,Math.max(0,.5-.5*sg*h));
+    const sm=h>0?1+.9*G(wr(lo-140),35)+.55*G(wr(lo+72),28)+.35*G(wr(lo-40),25)-.35*G(wr(lo+130),30):1+.55*G(wr(lo-110),55)+.25*G(wr(lo+50),40);
+    u+=(70+85*w)*sm*G(la-h*(31+9*(1-w)),5.5)+(55+50*w)*G(la-h*(50+4*(1-w)),6.5)}
+  return u-22*G(la,13)}
 function wxState(ms){
   const t=ms/3600000,doy=wxDoy(ms),sg=Math.sin(2*Math.PI*(doy-80)/365.25),utc=((t%24)+24)%24;
   // two cross-fading copies of each moving noise field (fast storm cells, slow weather clusters)
   const lay=(T,k)=>{const a=((t%T)+T)%T,n=Math.floor(t/T),a2=(((t+T/2)%T)+T)%T,n2=Math.floor((t+T/2)/T),wa=1-Math.abs(2*a/T-1);
     return [[a,Math.max(wa,.001),wxH(n,k,1,7)*97,0],[a2,Math.max(1-wa,.001),wxH(n2,k,2,7)*97,0]]};
-  const [FA,FB]=lay(8,1),[SA,SB]=lay(30,2);
+  const [FA,FB]=lay(8,1),[SA,SB]=lay(18,2);
   // mid-latitude lows: each slot spawns one every few days, which drifts east and poleward, deepens, then fills
   const cy=[];
   for(const hs of [1,-1])for(let i=0;i<12;i++){const Lp=132,off=i*Lp/12+wxH(i,hs,3,1)*10,tt=t-off,n=Math.floor(tt/Lp),age=tt-n*Lp,r=k=>wxH(i,n,hs*7+k,5);
     let lon0;if(hs>0){const z=r(1);lon0=z<.38?-72+(r(2)-.5)*30:z<.76?142+(r(2)-.5)*30:r(2)*360-180}else lon0=r(2)*360-180;
-    const lat0=hs*(36+r(3)*10),days=age/24,lon=((lon0+(11+r(4)*6)*days+540)%360)-180,lat=Math.max(-70,Math.min(70,lat0+hs*(1.2+r(5)*1.5)*days));
+    const lat0=hs*(36+r(3)*10),days=age/24,k=.42+r(4)*.16,dp=hs*(1.2+r(5)*1.5)/24;let lat=lat0,lon=lon0;
+    for(let a=0;a<age;a+=6){const dt=Math.min(6,age-a),u=Math.max(12,wxSteer(lat,lon,sg)*k);lon+=u*dt/(111*Math.max(Math.cos(lat*rad),.25));lat=Math.max(-70,Math.min(70,lat+dp*dt))}
+    lon=((lon+540)%360)-180;
     const season=hs>0?.75-.3*sg:.75+.3*sg,I=Math.pow(Math.sin(Math.PI*age/Lp),.8)*season*(.65+.45*r(6));
     cy.push({lat,lon,R:650+500*Math.min(1,age/(Lp*.5))+r(7)*200,I,rot:(r(8)-.5)*.6})}
   // tropical cyclones: a basin may or may not produce one each cycle, depending on the season
@@ -3411,12 +3424,15 @@ function wxVn(x,y,z){const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z);le
   return L(L(L(h(xi,yi,zi),h(xi+1,yi,zi),fx),L(h(xi,yi+1,zi),h(xi+1,yi+1,zi),fx),fy),L(L(h(xi,yi,zi+1),h(xi+1,yi,zi+1),fx),L(h(xi,yi+1,zi+1),h(xi+1,yi+1,zi+1),fx),fy),fz)}
 const wxG1=(x,w)=>Math.exp(-x*x/(w*w)),wxSS=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)},wxMix=(a,b,t)=>a*(1-t)+b*t;
 const wxMod=(x,y)=>x-y*Math.floor(x/y),wxWrap=a=>wxMod(a+180,360)-180;
-function wxAdv(P,lat,age){const al=Math.abs(lat)*57.2958,u=-6.5*wxG1(al,15)+14*wxG1(al-46,13)-3*wxG1(al-75,8),a=-u*3.6*age/(6371*Math.max(Math.cos(lat),.2)),c=Math.cos(a),s=Math.sin(a);return [P[0]*c-P[1]*s,P[0]*s+P[1]*c,P[2]]}
+function wxAdv(P,lat,age,w){
+  if(w){const rxy=Math.hypot(P[0],P[1]);if(rxy<1e-4)return P;const E=[-P[1]/rxy,P[0]/rxy,0],N=[-P[2]*E[1],P[2]*E[0],P[0]*E[1]-P[1]*E[0]];
+    const dx=-w[0]*age/6371,dy=-w[1]*age/6371,m=Math.hypot(dx,dy);if(m<1e-7)return P;const c=Math.cos(m),k=Math.sin(m)/m;
+    return [P[0]*c+(E[0]*dx+N[0]*dy)*k,P[1]*c+(E[1]*dx+N[1]*dy)*k,P[2]*c+(E[2]*dx+N[2]*dy)*k]}const al=Math.abs(lat)*57.2958,u=-6.5*wxG1(al,15)+14*wxG1(al-46,13)-3*wxG1(al-75,8),a=-u*3.6*age/(6371*Math.max(Math.cos(lat),.2)),c=Math.cos(a),s=Math.sin(a);return [P[0]*c-P[1]*s,P[0]*s+P[1]*c,P[2]]}
 function wxFbm(x,y,z){return .55*wxVn(x,y,z)+.3*wxVn(x*2.03+7.1,y*2.03+7.1,z*2.03+7.1)+.15*wxVn(x*4.1+3.3,y*4.1+3.3,z*4.1+3.3)}
-function wxFlow(P,lat,f,A,B){const pa=wxAdv(P,lat,A[0]),pb=wxAdv(P,lat,B[0]);
+function wxFlow(P,lat,f,A,B,w){const pa=wxAdv(P,lat,A[0],w),pb=wxAdv(P,lat,B[0],w);
   const a=wxFbm(pa[0]*f+A[2]*1.7,pa[1]*f+A[2]*2.3,pa[2]*f+A[2]*3.1),b=wxFbm(pb[0]*f+B[2]*1.7,pb[1]*f+B[2]*2.3,pb[2]*f+B[2]*3.1);
   return .5+(A[1]*(a-.5)+B[1]*(b-.5))/Math.sqrt(A[1]*A[1]+B[1]*B[1])}
-function wxDetail(P,lat,S,uR){let v=0,amp=.5,tot=0,f=40;const pa=wxAdv(P,lat,S.FA[0]),pb=wxAdv(P,lat,S.FB[0]),A=S.FA,B=S.FB;
+function wxDetail(P,lat,S,uR,w){let v=0,amp=.5,tot=0,f=40;const pa=wxAdv(P,lat,S.FA[0],w),pb=wxAdv(P,lat,S.FB[0],w),A=S.FA,B=S.FB;
   for(let k=0;k<5;k++){if(f>uR*.45)break;const oa=A[2]*1.3+k*5.1,ob=B[2]*1.3+k*5.1;
     const a=wxVn(pa[0]*f+oa,pa[1]*f+oa,pa[2]*f+oa),b=wxVn(pb[0]*f+ob,pb[1]*f+ob,pb[2]*f+ob);
     v+=amp*(.5+(A[1]*(a-.5)+B[1]*(b-.5))/Math.sqrt(A[1]*A[1]+B[1]*B[1]));tot+=amp;amp*=.55;f*=2.1}
@@ -3441,7 +3457,8 @@ function wxStateAt(ms){const step=Math.floor(ms/30000);let S=WXSC.get(step);if(S
 function wxSample(la,lo,ms,uR=300){
   const S=wxStateAt(ms),lat=la*rad,lon=lo*rad,P=[Math.cos(lat)*Math.cos(lon),Math.cos(lat)*Math.sin(lon),Math.sin(lat)],sg=S.sg;
   let land=0;if(typeof EARTH!=='undefined'&&EARTH&&EARTH.water){const x=((Math.floor((lo+180)/360*EARTH.ww)%EARTH.ww)+EARTH.ww)%EARTH.ww,y=Math.min(EARTH.wh-1,Math.max(0,Math.floor((90-la)/180*EARTH.wh)));land=EARTH.water[y*EARTH.ww+x]?0:1}
-  const clim=wxClimate(la,lo,sg),n1=wxFlow(P,lat,2.6,S.SA,S.SB),n2=wxFlow(P,lat,15,S.FA,S.FB),dt=wxDetail(P,lat,S,uR),cell=n2*.62+dt*.38;
+  const wv=wxWindPoint(la,lo,S),w=[wv[0]*.55,wv[1]*.55];
+  const clim=wxClimate(la,lo,sg),n1=wxFlow(P,lat,2.6,S.SA,S.SB,w),n2=wxFlow(P,lat,15,S.FA,S.FB,w),dt=wxDetail(P,lat,S,uR,w),cell=n2*.62+dt*.38;
   const lst=wxMod(S.utc+lo/15,24),diur=.5+.5*Math.cos((lst-15)/24*2*Math.PI),summer=Math.min(1,Math.max(0,.5+Math.sign(la)*sg*.5+(1-wxSS(20,32,Math.abs(la))))),dmod=wxMix(1,.45+1.15*diur,land*summer);
   const cluster=wxSS(.3,.6,n1);let C=Math.min(1,Math.max(0,clim*1.35+.06))*cluster*(.5+.95*wxSS(.28,.66,n2)),I=clim*cluster*wxSS(.4,.84,cell)*1.25*dmod;
   C=Math.max(C,wxDecks(la,lo)*wxSS(.36,.6,n2)*.95);
@@ -3472,13 +3489,15 @@ function initWx(g){
   const p=g.createProgram();g.attachShader(p,sh(g.VERTEX_SHADER,VS));g.attachShader(p,sh(g.FRAGMENT_SHADER,WXFS));
   g.bindAttribLocation(p,g.getAttribLocation(GLP,'a'),'a');g.linkProgram(p);
   if(!g.getProgramParameter(p,g.LINK_STATUS))throw new Error(g.getProgramInfoLog(p));
-  for(const n of ['uC2','uRes','uR','uSeason','uUTC','uCv','uEv','uNv','uFA','uFB','uSA','uSB','uCy','uCyE','uTc','uTcE','tWater'])WXU[n]=g.getUniformLocation(p,n);
-  g.useProgram(p);g.uniform1i(WXU.tWater,2);
+  for(const n of ['uC2','uRes','uR','uSeason','uUTC','uCv','uEv','uNv','uFA','uFB','uSA','uSB','uCy','uCyE','uTc','uTcE','tWater','tWind','uWindOn'])WXU[n]=g.getUniformLocation(p,n);
+  g.useProgram(p);g.uniform1i(WXU.tWater,2);g.uniform1i(WXU.tWind,12);
+  const wt=g.createTexture();g.activeTexture(g.TEXTURE0+12);g.bindTexture(g.TEXTURE_2D,wt);g.texImage2D(g.TEXTURE_2D,0,g.RG16F,1,1,0,g.RG,g.FLOAT,new Float32Array(2));
+  for(const [k,v] of [[g.TEXTURE_MIN_FILTER,g.LINEAR],[g.TEXTURE_MAG_FILTER,g.LINEAR],[g.TEXTURE_WRAP_S,g.REPEAT],[g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE]])g.texParameteri(g.TEXTURE_2D,k,v);
   const tex=g.createTexture();g.activeTexture(g.TEXTURE0+11);g.bindTexture(g.TEXTURE_2D,tex);
   g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array(4));
   for(const [k,v] of [[g.TEXTURE_MIN_FILTER,g.LINEAR],[g.TEXTURE_MAG_FILTER,g.LINEAR],[g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE],[g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE]])g.texParameteri(g.TEXTURE_2D,k,v);
   const fb=g.createFramebuffer();g.bindFramebuffer(g.FRAMEBUFFER,fb);g.framebufferTexture2D(g.FRAMEBUFFER,g.COLOR_ATTACHMENT0,g.TEXTURE_2D,tex,0);g.bindFramebuffer(g.FRAMEBUFFER,null);
-  WXP={p,tex,fb,w:1,h:1};wxKey='';wxView=null;
+  WXP={p,tex,fb,w:1,h:1,wt,wReady:false};wxKey='';wxView=null;if(WG.u)wxUploadWind();
   g.useProgram(GLP);g.uniform1i(g.getUniformLocation(GLP,'tWx'),11);
 }
 // the weather is drawn into its own texture only when the view moves or every half minute, then the globe reads it
@@ -3501,7 +3520,7 @@ function renderWx(cw,ch){
   const l0=view.lon*rad,p0=view.lat*rad,cl=Math.cos(l0),sl=Math.sin(l0),cp=Math.cos(p0),sp=Math.sin(p0);
   g.uniform3f(WXU.uCv,cp*cl,cp*sl,sp);g.uniform3f(WXU.uEv,-sl,cl,0);g.uniform3f(WXU.uNv,-sp*cl,-sp*sl,cp);
   g.uniform2f(WXU.uC2,W/2*GLDPR,(H-focusY())*GLDPR);g.uniform1f(WXU.uR,R()*GLDPR);g.uniform2f(WXU.uRes,cw,ch);
-  g.uniform1f(WXU.uSeason,S.sg);g.uniform1f(WXU.uUTC,S.utc);
+  g.uniform1f(WXU.uSeason,S.sg);g.uniform1f(WXU.uUTC,S.utc);g.uniform1f(WXU.uWindOn,WXP.wReady?1:0);
   g.uniform4fv(WXU.uFA,S.FA);g.uniform4fv(WXU.uFB,S.FB);g.uniform4fv(WXU.uSA,S.SA);g.uniform4fv(WXU.uSB,S.SB);
   const pack=(list,n)=>{const A=new Float32Array(n*4),B=new Float32Array(n*4);list.slice(0,n).forEach((c,i)=>{const f=wxFrame(c.lat,c.lon,c.rot||0);A.set([...f.C,c.I],i*4);B.set([...f.E,c.R],i*4)});return [A,B]};
   const [ca,cb]=pack(S.cy,24),[ta,tb]=pack(S.tc,6);
@@ -4006,8 +4025,10 @@ const WGC=180,WGR=91,WG={u:null,v:null,ms:-1,bu:null,bv:null,bms:-1,row:0};
 function wxWindTick(){const ms=Math.floor((wxForceMs??Date.now())/60000)*60000;
   if(WG.bms<0){if(WG.ms===ms)return;WG.bms=ms;WG.row=0;WG.bu=new Float32Array(WGC*WGR);WG.bv=new Float32Array(WGC*WGR)}   // a grid half built is finished before the next starts
   const S=wxStateAt(WG.bms),t0=performance.now();
-  while(WG.row<WGR&&performance.now()-t0<(WG.u?5:40)){const r=WG.row,la=-90+r*2;for(let c=0;c<WGC;c++){const [u,v]=wxWindPoint(la,-180+c*2,S);WG.bu[r*WGC+c]=u;WG.bv[r*WGC+c]=v}WG.row++}
-  if(WG.row>=WGR){WG.u=WG.bu;WG.v=WG.bv;WG.ms=WG.bms;WG.bms=-1}}
+  while(WG.row<WGR&&performance.now()-t0<(!WG.u?40:wxForceMs!=null?14:5)){const r=WG.row,la=-90+r*2;for(let c=0;c<WGC;c++){const [u,v]=wxWindPoint(la,-180+c*2,S);WG.bu[r*WGC+c]=u;WG.bv[r*WGC+c]=v}WG.row++}
+  if(WG.row>=WGR){WG.u=WG.bu;WG.v=WG.bv;WG.ms=WG.bms;WG.bms=-1;wxUploadWind()}}
+function wxUploadWind(){if(!GL||!WXP||!WXP.wt||!WG.u)return;const g=GL,d=new Float32Array(WGC*WGR*2);for(let i=0;i<WGC*WGR;i++){d[i*2]=WG.u[i];d[i*2+1]=WG.v[i]}
+  g.activeTexture(g.TEXTURE0+12);g.bindTexture(g.TEXTURE_2D,WXP.wt);g.texImage2D(g.TEXTURE_2D,0,g.RG16F,WGC,WGR,0,g.RG,g.FLOAT,d);WXP.wReady=true;wxKey=''}
 // wind anywhere, read from the grid
 function wxWindAt(la,lo){if(!WG.u)return [0,0];const y=Math.min(WGR-1.001,Math.max(0,(la+90)/2)),x=((lo+180)/2%WGC+WGC)%WGC,r=Math.floor(y),c=Math.floor(x),fy=y-r,fx=x-c,c2=(c+1)%WGC;
   const at=(A,rr,cc)=>A[rr*WGC+cc],L=(A)=>(at(A,r,c)*(1-fx)+at(A,r,c2)*fx)*(1-fy)+(at(A,r+1,c)*(1-fx)+at(A,r+1,c2)*fx)*fy;return [L(WG.u),L(WG.v)]}
@@ -4018,7 +4039,7 @@ function wpInit(){const n=Math.round(Math.min(2400,Math.max(900,W*H/200)));WPS.n
 function wpSpawn(i,scatter){WPS.hl[i]=0;WPS.age[i]=scatter?Math.random()*3:0;WPS.life[i]=2.2+Math.random()*2.6;
   for(let t=0;t<6;t++){const ll=proj.invert([Math.random()*W,56+Math.random()*(H-56)]);if(ll&&onFace(ll[0],ll[1])){WPS.lon[i]=ll[0];WPS.lat[i]=ll[1];return}}WPS.age[i]=WPS.life[i]}
 function drawWind(){
-  if(!showWind||!GL)return;wxWindTick();if(!WG.u)return;
+  if(!GL)return;wxWindTick();if(!showWind||!WG.u)return;
   const key=[view.lon.toFixed(3),view.lat.toFixed(3),view.z.toFixed(4),W,H].join('|'),now=performance.now();
   if(wxMoving||g){WPS.key='';return}                                  // like a wind map: the trails rest while you move the map, then start again
   if(WPS.key!==key){if(WPS.n!==Math.round(Math.min(2400,Math.max(900,W*H/200))))wpInit();else for(let i=0;i<WPS.n;i++)wpSpawn(i,true);WPS.key=key;WPS.last=now}
