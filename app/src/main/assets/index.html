@@ -3184,8 +3184,14 @@ uniform vec4 uCy[24],uCyE[24];           // mid-latitude lows: (centre, strength
 uniform vec4 uTc[6],uTcE[6];             // tropical cyclones: same layout
 uniform sampler2D tWater,tWind;uniform float uWindOn;
 out vec4 o;
+vec2 wdec(vec4 t){vec4 b=floor(t*255.+.5);return vec2(b.r*256.+b.g,b.b*256.+b.a)/65535.*800.-400.;}
+vec2 windAt(float la,float lo){float x=(lo+180.)*.5,y=clamp((la+90.)*.5,0.,89.999),x0=floor(x),y0=floor(y);vec2 f=vec2(x-x0,y-y0);
+  int c0=int(mod(x0,180.)),c1=int(mod(x0+1.,180.)),r0=int(y0),r1=min(r0+1,90);
+  vec2 a=wdec(texelFetch(tWind,ivec2(c0,r0),0)),b=wdec(texelFetch(tWind,ivec2(c1,r0),0)),c=wdec(texelFetch(tWind,ivec2(c0,r1),0)),d=wdec(texelFetch(tWind,ivec2(c1,r1),0));
+  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}
 const float PI=3.14159265359,ER=6371.;
-float h31(vec3 p){p=fract(p*.3183099+.1);p*=17.;return fract(p.x*p.y*p.z*(p.x+p.y+p.z));}
+// whole-number hash: bit-for-bit the same on every GPU and in the JavaScript copy
+float h31(vec3 p){uvec3 q=uvec3(ivec3(p));uint h=q.x*1597334677u^q.y*3812015801u^q.z*2798796415u;h^=h>>16;h*=2246822519u;h^=h>>13;h*=3266489917u;h^=h>>16;return float(h>>8)*(1./16777216.);}
 float vn(vec3 x){vec3 i=floor(x),f=fract(x);f=f*f*(3.-2.*f);
   return mix(mix(mix(h31(i),h31(i+vec3(1,0,0)),f.x),mix(h31(i+vec3(0,1,0)),h31(i+vec3(1,1,0)),f.x),f.y),
              mix(mix(h31(i+vec3(0,0,1)),h31(i+vec3(1,0,1)),f.x),mix(h31(i+vec3(0,1,1)),h31(i+vec3(1,1,1)),f.x),f.y),f.z);}
@@ -3194,7 +3200,7 @@ float g1(float x,float w){return exp(-x*x/(w*w));}
 vec3 advect(vec3 P,float lat,float age){
   if(uWindOn>.5){float rxy=length(P.xy);if(rxy<1e-4)return P;
     float la=lat*57.2958,lo=atan(P.y,P.x)*57.2958;
-    vec2 w=texture(tWind,vec2(((lo+180.)*.5+.5)/180.,((la+90.)*.5+.5)/91.)).rg*.55;
+    vec2 w=windAt(la,lo)*.55;
     vec3 E=vec3(-P.y,P.x,0.)/rxy,N=cross(P,E);vec2 d=-w*age/ER;float m=length(d);if(m<1e-7)return P;
     return P*cos(m)+(E*d.x+N*d.y)*(sin(m)/m);}
   float al=abs(lat)*57.2958,u=-6.5*g1(al,15.)+14.*g1(al-46.,13.)-3.*g1(al-75.,8.);   // m/s
@@ -3414,11 +3420,10 @@ function wxState(ms){
   WX_BASINS.forEach((b,bi)=>{for(let s=0;s<2;s++){const off=s*WX_LC/2+bi*31,tt=t-off,n=Math.floor(tt/WX_LC),st=wxTcAt(bi,s,n,tt-n*WX_LC);if(st&&st.I>.03)tc.push(st)}});
   tc.sort((a,b)=>b.I-a.I);
   return {sg,utc,FA,FB,SA,SB,cy,tc:tc.slice(0,6)}}
-// the same weather in JavaScript, for checking a route against the forecast (mirrors WXFS; the hash runs in 32-bit floats like the GPU)
+// the same weather in JavaScript, for checking a route against the forecast (mirrors WXFS, with the same whole-number hash)
 let wxForceMs=null;
 const wxF=Math.fround,WXC=wxF(.3183099),WXT=wxF(.1),WXSC=new Map();
-function wxH31(x,y,z){let a=wxF(wxF(x*WXC)+WXT),b=wxF(wxF(y*WXC)+WXT),c=wxF(wxF(z*WXC)+WXT);a-=Math.floor(a);b-=Math.floor(b);c-=Math.floor(c);
-  a=wxF(a*17);b=wxF(b*17);c=wxF(c*17);const m=wxF(wxF(wxF(a*b)*c)*wxF(wxF(a+b)+c));return m-Math.floor(m)}
+function wxH31(x,y,z){let h=(Math.imul(x|0,1597334677)^Math.imul(y|0,3812015801)^Math.imul(z|0,2798796415))>>>0;h^=h>>>16;h=Math.imul(h,2246822519)>>>0;h^=h>>>13;h=Math.imul(h,3266489917)>>>0;h^=h>>>16;return (h>>>8)/16777216}
 function wxVn(x,y,z){const xi=Math.floor(x),yi=Math.floor(y),zi=Math.floor(z);let fx=x-xi,fy=y-yi,fz=z-zi;fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);fz=fz*fz*(3-2*fz);
   const L=(a,b,t)=>a*(1-t)+b*t,h=wxH31;
   return L(L(L(h(xi,yi,zi),h(xi+1,yi,zi),fx),L(h(xi,yi+1,zi),h(xi+1,yi+1,zi),fx),fy),L(L(h(xi,yi,zi+1),h(xi+1,yi,zi+1),fx),L(h(xi,yi+1,zi+1),h(xi+1,yi+1,zi+1),fx),fy),fz)}
@@ -3491,8 +3496,8 @@ function initWx(g){
   if(!g.getProgramParameter(p,g.LINK_STATUS))throw new Error(g.getProgramInfoLog(p));
   for(const n of ['uC2','uRes','uR','uSeason','uUTC','uCv','uEv','uNv','uFA','uFB','uSA','uSB','uCy','uCyE','uTc','uTcE','tWater','tWind','uWindOn'])WXU[n]=g.getUniformLocation(p,n);
   g.useProgram(p);g.uniform1i(WXU.tWater,2);g.uniform1i(WXU.tWind,12);
-  const wt=g.createTexture();g.activeTexture(g.TEXTURE0+12);g.bindTexture(g.TEXTURE_2D,wt);g.texImage2D(g.TEXTURE_2D,0,g.RG16F,1,1,0,g.RG,g.FLOAT,new Float32Array(2));
-  for(const [k,v] of [[g.TEXTURE_MIN_FILTER,g.LINEAR],[g.TEXTURE_MAG_FILTER,g.LINEAR],[g.TEXTURE_WRAP_S,g.REPEAT],[g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE]])g.texParameteri(g.TEXTURE_2D,k,v);
+  const wt=g.createTexture();g.activeTexture(g.TEXTURE0+12);g.bindTexture(g.TEXTURE_2D,wt);g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array([127,255,127,255]));
+  for(const [k,v] of [[g.TEXTURE_MIN_FILTER,g.NEAREST],[g.TEXTURE_MAG_FILTER,g.NEAREST],[g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE],[g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE]])g.texParameteri(g.TEXTURE_2D,k,v);
   const tex=g.createTexture();g.activeTexture(g.TEXTURE0+11);g.bindTexture(g.TEXTURE_2D,tex);
   g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,1,1,0,g.RGBA,g.UNSIGNED_BYTE,new Uint8Array(4));
   for(const [k,v] of [[g.TEXTURE_MIN_FILTER,g.LINEAR],[g.TEXTURE_MAG_FILTER,g.LINEAR],[g.TEXTURE_WRAP_S,g.CLAMP_TO_EDGE],[g.TEXTURE_WRAP_T,g.CLAMP_TO_EDGE]])g.texParameteri(g.TEXTURE_2D,k,v);
@@ -3880,7 +3885,7 @@ function drawPlan(now){
   if(P.TT>0){const p=flightState(t,b.dep,b.dep+P.TT*MIN).p,q=routeAt(r,p),n=routeAt(r,Math.min(1,p+.01));if(onFace(q[0],q[1])){const xy=proj(q),a=proj(n),ang=Math.atan2(a[1]-xy[1],a[0]-xy[0])+Math.PI/2;
     drawJet(xy[0],xy[1],ang,L,kd,t.al,0,.75);ctx.save();ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(xy[0],xy[1],L*.62,0,7);ctx.lineWidth=2;ctx.strokeStyle='rgba(38,48,74,.6)';ctx.stroke();ctx.restore();
     plTag(xy[0],xy[1]+L*.62+16,'+'+plFmt(P.TT),'#fff')}}
-  if(P.bad>=0&&!P.grab){const q=r.pts[P.bad];if(onFace(q[0],q[1])){const [x,y]=proj(q);plTag(x+60,y-16,'Storm at +'+plFmt(P.tm[P.bad]),PL_RED)}}
+  P.stormBox=null;if(P.bad>=0&&!P.grab){const q=r.pts[P.bad];if(onFace(q[0],q[1])){const [x,y]=proj(q);plTag(x+60,y-16,'Storm at +'+plFmt(P.tm[P.bad]),PL_RED);P.stormBox=[x+60-80,y-16-16,x+60+80,y-16+16]}}
   const hs=P.wp.length?P.wp.map(v=>{const n=Math.hypot(...v);return [Math.atan2(v[1],v[0])/rad,Math.asin(v[2]/n)/rad]}):[routeAt(r,.5)];
   hs.forEach((q,i)=>{if(!onFace(q[0],q[1]))return;const [x,y]=proj(q),on=P.grab&&P.grab.wp===i;plHandle(x,y,on);
     if(on)plTag(x,y-44,(P.stats.detour?`+${P.stats.detour.toLocaleString('en')} km · `:'')+P.stats.ride,P.stats.ride==='Severe'?PL_RED:PL_SUN)});
@@ -3890,7 +3895,8 @@ function plNear(x,y){const P=PLAN;for(let i=0;i<P.wp.length;i++){const v=P.wp[i]
   if(P.wp.length>=PL_MAXWP)return null;const pts=P.r.pts,lo=Math.round(pts.length*.05),hi=Math.round(pts.length*.95);let best=null;
   for(let i=lo;i<=hi;i++){const q=pts[i];if(!onFace(q[0],q[1]))continue;const p=proj(q),d=Math.hypot(p[0]-x,p[1]-y);if(!best||d<best.d)best={i,d}}
   return best&&best.d<32?{ins:P.r.seg[best.i],q:pts[best.i]}:null}
-addEventListener('pointerdown',e=>{if(!PLAN||e.target!==cv)return;const h=plNear(e.clientX,e.clientY);if(!h)return;const P=PLAN;
+addEventListener('pointerdown',e=>{if(!PLAN||e.target!==cv)return;{const b=PLAN.stormBox,x=e.clientX,y=e.clientY;if(b&&x>=b[0]&&x<=b[2]&&y>=b[1]&&y<=b[3]){PLAN.play=null;plSetT(PLAN.tm[PLAN.bad]);const r=$('plT');if(r)r.value=Math.round(PLAN.TT);e.stopImmediatePropagation();e.preventDefault();return}}
+  const h=plNear(e.clientX,e.clientY);if(!h)return;const P=PLAN;
   if(h.ins!=null){P.wp.splice(h.ins,0,vec(h.q[1],h.q[0]));P.grab={wp:h.ins,x:e.clientX,y:e.clientY,moved:true};plEval()}else P.grab={wp:h.wp,x:e.clientX,y:e.clientY,moved:false};
   e.stopImmediatePropagation();e.preventDefault();needsDraw=true},true);
 addEventListener('pointermove',e=>{const P=PLAN;if(!P||!P.grab)return;e.stopImmediatePropagation();e.preventDefault();if(Math.hypot(e.clientX-P.grab.x,e.clientY-P.grab.y)>6)P.grab.moved=true;if(!P.grab.moved)return;
@@ -4027,8 +4033,9 @@ function wxWindTick(){const ms=Math.floor((wxForceMs??Date.now())/60000)*60000;
   const S=wxStateAt(WG.bms),t0=performance.now();
   while(WG.row<WGR&&performance.now()-t0<(!WG.u?40:wxForceMs!=null?14:5)){const r=WG.row,la=-90+r*2;for(let c=0;c<WGC;c++){const [u,v]=wxWindPoint(la,-180+c*2,S);WG.bu[r*WGC+c]=u;WG.bv[r*WGC+c]=v}WG.row++}
   if(WG.row>=WGR){WG.u=WG.bu;WG.v=WG.bv;WG.ms=WG.bms;WG.bms=-1;wxUploadWind()}}
-function wxUploadWind(){if(!GL||!WXP||!WXP.wt||!WG.u)return;const g=GL,d=new Float32Array(WGC*WGR*2);for(let i=0;i<WGC*WGR;i++){d[i*2]=WG.u[i];d[i*2+1]=WG.v[i]}
-  g.activeTexture(g.TEXTURE0+12);g.bindTexture(g.TEXTURE_2D,WXP.wt);g.texImage2D(g.TEXTURE_2D,0,g.RG16F,WGC,WGR,0,g.RG,g.FLOAT,d);WXP.wReady=true;wxKey=''}
+function wxUploadWind(){if(!GL||!WXP||!WXP.wt||!WG.u)return;const g=GL,d=new Uint8Array(WGC*WGR*4),q=x=>Math.max(0,Math.min(65535,Math.round((x+400)/800*65535)));
+  for(let i=0;i<WGC*WGR;i++){const a=q(WG.u[i]),b=q(WG.v[i]);d[i*4]=a>>8;d[i*4+1]=a&255;d[i*4+2]=b>>8;d[i*4+3]=b&255}
+  g.activeTexture(g.TEXTURE0+12);g.bindTexture(g.TEXTURE_2D,WXP.wt);g.texImage2D(g.TEXTURE_2D,0,g.RGBA8,WGC,WGR,0,g.RGBA,g.UNSIGNED_BYTE,d);WXP.wReady=g.getError()===g.NO_ERROR;wxKey=''}
 // wind anywhere, read from the grid
 function wxWindAt(la,lo){if(!WG.u)return [0,0];const y=Math.min(WGR-1.001,Math.max(0,(la+90)/2)),x=((lo+180)/2%WGC+WGC)%WGC,r=Math.floor(y),c=Math.floor(x),fy=y-r,fx=x-c,c2=(c+1)%WGC;
   const at=(A,rr,cc)=>A[rr*WGC+cc],L=(A)=>(at(A,r,c)*(1-fx)+at(A,r,c2)*fx)*(1-fy)+(at(A,r+1,c)*(1-fx)+at(A,r+1,c2)*fx)*fy;return [L(WG.u),L(WG.v)]}
