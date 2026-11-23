@@ -3848,14 +3848,19 @@ function plEval(){const P=PLAN,b=P.b;P.r=routeBuild(AP[b.o],AP[b.d],P.wp);const 
   P.tm=r.cum.map(f=>P.tOf(f));P.sev=r.pts.map((q,i)=>wxSample(q[1],q[0],b.dep+P.tm[i]*MIN).rain);
   let worst=0;P.bad=-1;P.sev.forEach((v,i)=>{worst=Math.max(worst,v);if(v>=.7&&P.bad<0)P.bad=i});
   P.stats={worst,ride:worst>=.7?'Severe':worst>=.44?'Bumpy':worst>=.17?'Light chop':'Smooth',detour:Math.max(0,Math.round(r.km-P.direct))};
-  if(!P.grab)plCard();needsDraw=true}
+  if(P.grab)plLive();else plCard();needsDraw=true}
 function plSetT(T){const P=PLAN;P.TT=Math.max(0,Math.min(P.blk,T));wxForceMs=P.b.dep+P.TT*MIN;const l=$('plTl');if(l)l.textContent=P.TT>0?'+'+plFmt(P.TT):'Departure';needsDraw=true}
-function plCard(){const P=PLAN,el=$('plan');if(!P||!el)return;const b=P.b,s=P.stats,A=AP[b.o],B=AP[b.d];
-  const col=s.ride==='Smooth'?'#1b7a35':s.ride==='Severe'?'#c42b2f':'var(--text)';
-  const h=s.ride==='Severe'?'Storm on your route at +'+plFmt(P.tm[P.bad]):s.ride==='Smooth'?'Clear skies all the way':'A few bumps on the way';
-  el.innerHTML=`<div class="k">Pre-flight · ${esc(b.id)} ${esc(A.city)} → ${esc(B.city)}</div><h2>${h}</h2>
+function plParts(){const P=PLAN,s=P.stats;return {col:s.ride==='Smooth'?'#1b7a35':s.ride==='Severe'?'#c42b2f':'var(--text)',
+  h:s.ride==='Severe'?'Storm on your route at +'+plFmt(P.tm[P.bad]):s.ride==='Smooth'?'Clear skies all the way':'A few bumps on the way',
+  ft:blkTxt(Math.round(P.blk)),fs:P.xm?`Flight time · <i style="font-style:normal;color:#c2410c">+${P.xm} min</i>`:'Flight time',dt:s.detour?'+'+s.detour.toLocaleString('en')+' km':'Direct'}}
+// while you drag: update the numbers in place, so the card follows the line without being rebuilt
+function plLive(){const P=PLAN,el=$('plan');if(!P||!el||!$('plH'))return plCard();const q=plParts(),set=(id,v,html)=>{const e=$(id);if(e&&e._v!==v){html?e.innerHTML=v:e.textContent=v;e._v=v}};
+  set('plH',q.h);set('plFt',q.ft);set('plFs',q.fs,1);set('plDt',q.dt);set('plRd',P.stats.ride);const rd=$('plRd');if(rd)rd.style.color=q.col;
+  const r=$('plT');if(r&&+r.max!==Math.ceil(P.blk))r.max=Math.ceil(P.blk)}
+function plCard(){const P=PLAN,el=$('plan');if(!P||!el)return;const b=P.b,s=P.stats,A=AP[b.o],B=AP[b.d],q=plParts(),col=q.col,h=q.h;
+  el.innerHTML=`<div class="k">Pre-flight · ${esc(b.id)} ${esc(A.city)} → ${esc(B.city)}</div><h2 id="plH">${h}</h2>
   <div class="tl"><button id="plPlay" aria-label="Play forecast"><svg width="16" height="16" viewBox="0 0 24 24"><path d="${P.play?'M7 5h4v14H7zM13 5h4v14h-4z':'M7 4l13 8-13 8z'}" fill="#26304a"/></svg></button><input id="plT" type="range" min="0" max="${Math.ceil(P.blk)}" step="1" value="${Math.round(P.TT)}" aria-label="Forecast time"><b id="plTl">${P.TT>0?'+'+plFmt(P.TT):'Departure'}</b></div>
-  <div class="rw"><div><b>${blkTxt(Math.round(P.blk))}</b><span>${P.xm?`Flight time · <i style="font-style:normal;color:#c2410c">+${P.xm} min</i>`:'Flight time'}</span></div><div><b>${s.detour?'+'+s.detour.toLocaleString('en')+' km':'Direct'}</b><span>Detour</span></div><div><b style="color:${col}">${s.ride}</b><span>Ride</span></div></div>
+  <div class="rw"><div><b id="plFt">${q.ft}</b><span id="plFs">${q.fs}</span></div><div><b id="plDt">${q.dt}</b><span>Detour</span></div><div><b id="plRd" style="color:${col}">${s.ride}</b><span>Ride</span></div></div>
   <div class="row"><button class="ghost" id="plReset">Reset</button><button class="cta" id="plGo">Set route</button></div>
   <div class="foot">Drag the line to bend it. Tap a point to remove it.</div>`;
   $('plReset').onclick=()=>{PLAN.wp=[];plEval()};
