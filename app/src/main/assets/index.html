@@ -3017,7 +3017,7 @@ const glc=$('glmap');let GL=null,GLP=null,GLU={},GLDPR=1;
 const VS=`#version 300 es
 in vec2 a;void main(){gl_Position=vec4(a,0.,1.);}`;
 const FS=`#version 300 es
-precision highp float;
+precision highp float;precision highp int;precision highp sampler2D;
 uniform vec2 uC2;uniform float uR,uMap,uNight,uClouds,uCS,uDpr,uStyle,uCloudA;uniform vec3 uCv,uEv,uNv,uSun;uniform vec2 uRes;
 uniform sampler2D tDay,tNight,tWater,tRel,tMap,tCloud,tLand,tUrb,tNear;uniform float uSdf,uUrb,uRelA,uLtex,uOpen,uCtry;uniform sampler2D tZone,tCtry,tWx;uniform float uWx,uRain,uWR;uniform vec2 uShOff,uWC2;uniform vec3 uWCv,uWEv,uWNv;
 out vec4 o;
@@ -3177,7 +3177,7 @@ void main(){
   }
 }`;
 const WXFS=`#version 300 es
-precision highp float;
+precision highp float;precision highp int;precision highp sampler2D;   // phones default whole numbers to 16-bit, which breaks the hash
 // live weather, worked out from the clock so every player sees the same sky:
 // r = cloud cover, g = precipitation intensity, b = how much of it falls as snow
 uniform vec2 uC2,uRes;uniform float uR,uSeason,uUTC;uniform vec3 uCv,uEv,uNv;
